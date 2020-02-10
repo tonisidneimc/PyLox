@@ -4,6 +4,12 @@ from Lox_Exceptions import ScanError
 
 __all__ = ["Scanner"]
 
+"""
+    This module provides the Scanner class with some methods,  
+    to process and break a buffer of characters 
+    into multiple tokens, to be processed by the Parser later
+"""
+
 class Scanner(object) :
     
     #Lox reserved keywords
@@ -27,21 +33,24 @@ class Scanner(object) :
     }
     
     def __init__(self, source : str) :
-        self._hadError = False
-        self._line = 1
-        self._start = 0
-        self._current = 0
-        self._source = source
-        self._tokens = []
+        self._hadError = False  # defines the error state of Scanner
+        self._line = 1          # works as a pointer to the current line in the buffer
+        self._start = 0         # works as a pointer to the beginning of a token 
+        self._current = 0       # works as a pointer to the end of a token
+        self._source = source   # character buffer to be tokenized
+        self._tokens = []       # final list of tokens
     
     def Tokenize(self) -> list:
+        """
+            breaks the character buffer into a list of tokens, readable to the interpreter
+        """
         while not self._isAtEnd() :
             try :
                 self._start = self._current
                 self._scanToken()
-            except ScanError as e :
+            except ScanError as error :
                 self._hadError = True
-                e.what()
+                error.what()
                 
         self._start = self._current        
         self._addToken(TokenType.EOF)
@@ -80,9 +89,12 @@ class Scanner(object) :
         elif self._isalphanum(c) : 
             self._identifier()
         else : 
-            raise ScanError(self._line, "Unexpected character '{}'".format(c))
+            raise ScanError(self._line, "Unexpected character '{}'.".format(c))
     
     def _addToken(self, token : TokenType, literal : object = None) -> None :
+        """
+            creates token with lexeme beginning from _start until _current, and append it to the token list
+        """
         text = self._source[self._start : self._current]
         self._tokens.append(Token(token, text, literal, self._line))
     
@@ -108,6 +120,9 @@ class Scanner(object) :
         self._addToken(TokenType.NUMBER, float(self._source[self._start : self._current]))
     
     def _isalphanum(self, char : str) -> bool:
+        """
+            check if char is a valid alphanumeric character
+        """
         return str.isalnum(char) or char == "_"
     
     def _identifier(self) -> None: 
@@ -120,28 +135,46 @@ class Scanner(object) :
         else : self._addToken(Scanner._keywords[text])
      
     def _isAtEnd(self) -> bool:
+        """
+            checks if there is any character still to be processed from the buffer
+        """
         return self._current >= len(self._source)
     
     def _increment_line(self) -> None:
         self._line += 1
     
     def _advance(self, offset : int = 1) -> str:
+        """
+           advances the _current pointer in the character buffer
+        """
         self._current += offset
         return self._source[self._current - offset]
     
     def _peek(self) -> str:
+        """
+            get _current character in the buffer
+        """
         if self._isAtEnd() : return "\0"
         else : return self._source[self._current]
         
     def _peekNext(self) -> str:
+        """
+            get next character after _current in the buffer
+        """
         if self._current + 1 >= len(self._source) : return "\0"
         else : return self._source[self._current + 1]
     
     def _previous(self) -> str:
+        """
+            get the first character before _current from the character buffer
+        """
         if (self._current - 1) < 0 : return ""
         return self._source[self._current - 1]     
     
     def _match(self, *expected : tuple) -> bool :
+        """
+            checks and consumes the _current character if it matches any of the expected characters
+        """
         if self._isAtEnd() : return False
         for char in expected :
             if self._source[self._current] == char :
@@ -150,6 +183,9 @@ class Scanner(object) :
         return False
         
     def _skipSpaces(self) -> None :
+        """
+            consumes characters from the buffer until the comment ends
+        """
         if(self._previous() == "/") : #single-line comments
             while self._peek() != "\n" and not self._isAtEnd() :
                 self._advance()            

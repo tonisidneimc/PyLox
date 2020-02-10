@@ -1,5 +1,7 @@
 import sys
 from Scanner import *  
+from Parser import *
+from printAst import printAst
     
 class Lox :
     _hadError = False
@@ -33,7 +35,16 @@ class Lox :
         if cls.error_state(scanner) :
             cls._hadError = True; return
         
-        for token in tokens : print(token)
+        #for token in tokens : print(token)
+        
+        parser = Parser(tokens)
+        expression = parser.Parse()
+        
+        if cls.error_state(parser) :
+            cls._hadError = True; return
+        
+        printAst(expression)
+        print()
             
 if __name__ == "__main__" :
      if len(sys.argv) > 2 : 
