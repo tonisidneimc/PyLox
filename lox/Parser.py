@@ -1,7 +1,8 @@
-from Token import *
-from TokenType import *
-from Lox_Exceptions import ParseError
-import Expr
+from . import Expr
+from . import Stmt
+from .Token import *
+from .TokenType import *
+from .Lox_Exceptions import ParseError
 
 __all__ = ["Parser"]
 
@@ -18,18 +19,65 @@ class Parser(object) :
         self._tokens = tokens   # the token list to be processed
         self._hadError = False  # defines the error state of Parser
     
-    def Parse(self) -> Expr :
+    def Parse(self) -> list:
         """
-            creates and returns a Arithmetic Syntax Tree for the current expression in token list
+            matches the rule :
+                program -> statement* EOF
         """
+        statements = []
+        
+        while not self._isAtEnd() :
+            try :
+                stmt = self._statement()
+                
+            except ParseError as error:
+                self._hadError = True
+                error.what()
+            else :
+                statements.append(stmt)
+            
+            finally :
+                self._advance()
+                
+        return statements
+        
+    def _statement(self) : 
+        """
+            matches to one of the rules :
+                statement -> exprStmt
+                statement -> printStmt
+        """
+        if self._match(TokenType.PRINT) :
+            return self._printStmt()
+            
+        return self._exprStmt()
+     
+    def _exprStmt(self) :
+        """
+            match the rule :
+                exprStmt -> expression ";"
+        """
+        expr = self._expression()
         try :
-            return self._expression()
-
-        except ParseError as error :
-            self._hadError = True
-            error.what()
-            return None 
+            self._consume(TokenType.SEMICOLON, errorMessage = "expected ';' after expression.")
+        except ParseError :
+            raise
+        else :
+            return Stmt.Expression(expr)
     
+    def _printStmt(self) :
+        """
+            match the rule:
+                printStmt -> "print" expression ";"
+        """
+        value = self._expression()
+        try :
+            self._consume(TokenType.SEMICOLON, errorMessage = "Expected ';' after value.")
+        except ParseError:
+            raise
+        else :
+            return Stmt.Print(value)
+            
     def _expression(self) -> Expr:
         """
             matches the rule: 

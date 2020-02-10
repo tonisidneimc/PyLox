@@ -1,7 +1,7 @@
 import sys
-from Scanner import *  
-from Parser import *
-from printAst import printAst
+from lox.Scanner import *  
+from lox.Parser import *
+from tool.printAst import printAst
     
 class Lox :
     _hadError = False
@@ -38,14 +38,16 @@ class Lox :
         #for token in tokens : print(token)
         
         parser = Parser(tokens)
-        expression = parser.Parse()
+        statements = parser.Parse()
         
         if cls.error_state(parser) :
             cls._hadError = True; return
         
-        printAst(expression)
-        print()
-            
+        for statement in statements :
+            printAst(statement.expression)
+            print()
+                
+         
 if __name__ == "__main__" :
      if len(sys.argv) > 2 : 
         print ("Usage jlox [script]")

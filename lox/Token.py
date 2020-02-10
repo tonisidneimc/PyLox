@@ -1,9 +1,9 @@
-from TokenType import *
+from .TokenType import *
 
 __all__ = ["Token"]
 
 class Token(object):
-    __slots__ = ("__dict__", "lexeme", "line", "literal", "tokenValue")
+    __slots__ = ("lexeme", "line", "literal", "tokenValue")
     
     def __init__(self, token : TokenType, lexeme : str, literal : object, line : int) :
         self.tokenValue = token

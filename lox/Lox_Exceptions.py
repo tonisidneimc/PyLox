@@ -1,5 +1,5 @@
-from Token import *
-from TokenType import *
+from .Token import *
+from .TokenType import *
 
 class Lox_Exceptions(Exception) :
     

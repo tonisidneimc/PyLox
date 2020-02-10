@@ -1,6 +1,6 @@
-import Expr
-from TokenType import *
-from Token import *
+from lox import Expr
+from lox.TokenType import *
+from lox.Token import *
 
 def printAst(expr : Expr) :    
     
