@@ -8,8 +8,8 @@ __all__ = ["Parser"]
 
 """
     This module provides the Parser class, with some methods, 
-    to build the Specific Arithmetic Syntax Tree, from a given list of tokens 
-    (see the scanner's documentation), to be interpreted by the Interpreter later.
+    to build the specific Statement Syntax Tree, from a given list of tokens,
+    (see the scanner's documentation), for each statement that composes the program.
 """
 
 class Parser(object) :
@@ -41,7 +41,7 @@ class Parser(object) :
                 
         return statements
         
-    def _statement(self) : 
+    def _statement(self) -> Stmt: 
         """
             matches to one of the rules :
                 statement -> exprStmt
@@ -52,20 +52,20 @@ class Parser(object) :
             
         return self._exprStmt()
      
-    def _exprStmt(self) :
+    def _exprStmt(self) -> Stmt:
         """
             match the rule :
                 exprStmt -> expression ";"
         """
         expr = self._expression()
         try :
-            self._consume(TokenType.SEMICOLON, errorMessage = "expected ';' after expression.")
+            self._consume(TokenType.SEMICOLON, errorMessage = "Expected ';' after expression.")
         except ParseError :
             raise
         else :
             return Stmt.Expression(expr)
     
-    def _printStmt(self) :
+    def _printStmt(self) -> Stmt:
         """
             match the rule:
                 printStmt -> "print" expression ";"
