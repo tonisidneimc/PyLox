@@ -12,5 +12,5 @@ class Token(object):
         self.line = line
         
     def __str__(self) -> str:
-        return str(self.token) + " '" + self.lexeme + "', line: " + str(self.line)
+        return str(self.tokenValue) + " '" + self.lexeme + "', line: " + str(self.line)
 

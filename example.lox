@@ -1,0 +1,8 @@
+var a;
+var b;
+var c;
+a = b = 3 * (-4 + 9);
+print a;
+print b;
+c = b + 9 / 4;
+print c;

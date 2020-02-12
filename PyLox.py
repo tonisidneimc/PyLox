@@ -2,11 +2,12 @@ import sys
 from lox.Scanner import *  
 from lox.Parser import *
 from lox.Interpreter import *
-from tool.printAst import printAst
+from tool.printSst import printSst
     
 class Lox :
     _hadError = False
     _hadRuntimeError = False
+    _interpreter = Interpreter()
     
     @classmethod
     def _hasAnyError(cls, step : object) -> bool :
@@ -38,7 +39,7 @@ class Lox :
         if cls._hasAnyError(scanner) :
             cls._hadError = True; return
         
-        #for token in tokens : print(token)
+        #for token in tokens : print(token.tokenValue)
         
         parser = Parser(tokens)
         statements = parser.Parse()
@@ -47,13 +48,12 @@ class Lox :
             cls._hadError = True; return
         
         #for statement in statements :
-        #    printAst(statement.expression)
+        #    printSst(statement)
         #    print()
         
-        interpreter = Interpreter()
-        interpreter.Interpret(statements)
+        cls._interpreter.Interpret(statements)
         
-        if cls._hasAnyError(interpreter) :
+        if cls._hasAnyError(cls._interpreter) :
            cls._hadRuntimeError = True; return        
          
 if __name__ == "__main__" :

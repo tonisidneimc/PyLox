@@ -9,7 +9,7 @@ class Grouping (Expr) :
 class Literal  (Expr) :
     def __init__(self, value : object) : 
         self.value = value
-    
+        
 class Unary    (Expr) :
     def __init__(self, operator : Token, right : Expr) : 
         self.operator = operator
@@ -20,4 +20,12 @@ class Binary   (Expr) :
         self.left = left
         self.operator = operator
         self.right = right
-    
+
+class Variable (Expr) :
+    def __init__(self, name : Token) :
+        self.name = name
+
+class Assign   (Expr) :
+    def __init__(self, name : Token, value : Expr) :
+        self.name = name
+        self.value = value
