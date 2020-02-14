@@ -42,6 +42,13 @@ class Interpreter :
         
         elif isinstance(statement, Stmt.Expression) :
             self._evaluate(statement.expression); return
+        
+        elif isinstance(statement, Stmt.If) :
+            if self._isTruth(self._evaluate(statement.condition)) :
+                self._execute(statement.thenBranch)
+            elif statement.elseBranch is not None :
+                self._execute(statement.elseBranch)
+            return None
                         
         elif isinstance(statement, Stmt.Print) :
             #print some expression in the current scope
@@ -138,6 +145,7 @@ class Interpreter :
         
         for operand in operands :
             if not isinstance(operand, float) :
+                print(type(operand))
                 raise RunTimeError(operator, "All operands must be numbers.")
         return
     

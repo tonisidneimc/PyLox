@@ -1,13 +1,20 @@
 var a = 3; //global
 {
-    var b = 5; //outer block
+    var b = 8; //outer block
     {
         var c = 7; //outer block
         {
             //inner block
-            print a + b * c; //38
-            a = 10; 
+            if (a >= b)
+                if(a >= c) //a >= b and a >= c
+                    print "a is greater";
+                else //b < a < c
+                    print "c is greater";
+            else //a < b
+                if (b >= c) //b > a and b >= c 
+                    print "b is greater";     
+                else //a < b < c
+                    print "c is greater";
         }
-        print a + b * c; //45
     }
 }

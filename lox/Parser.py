@@ -67,10 +67,14 @@ class Parser(object) :
         """
             matches to one of the rules :
                 statement -> exprStmt
+                statement -> ifStmt
                 statement -> printStmt
                 statement -> block
         """
-        if self._match(TokenType.PRINT) :
+        if self._match(TokenType.IF) :
+            return self._ifStmt()
+            
+        elif self._match(TokenType.PRINT) :
             return self._printStmt()
         
         elif self._match(TokenType.LEFT_BRACE) :
@@ -78,6 +82,20 @@ class Parser(object) :
             
         return self._exprStmt()
      
+    def _ifStmt(self) -> Stmt:
+        """
+            matches the rule:
+                ifStmt -> "if" "(" expression ")" statement ("else" statement)?
+        """
+        self._consume(TokenType.LEFT_PAREN, errorMessage = "Expect '(' after 'if'.")
+        condition = self._expression()
+        self._consume(TokenType.RIGHT_PAREN, errorMessage = "Expect ')' after if condition.")
+        
+        thenBranch = self._statement()
+        elseBranch = None if not self._match(TokenType.ELSE) else self._statement()
+        
+        return Stmt.If(condition, thenBranch, elseBranch)        
+         
     def _exprStmt(self) -> Stmt:
         """
             matches the rule :
