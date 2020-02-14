@@ -150,10 +150,10 @@ class Parser(object) :
     def _assignment(self) -> Expr:
         """
             matches to one of the rules:
-                assignment -> equality
+                assignment -> logic_or
                 assignment -> IDENTIFIER "=" assignment
         """
-        expr = self._equality()
+        expr = self._logic_or()
         
         if self._match(TokenType.EQUAL) :
             equals = self._previous()
@@ -168,6 +168,36 @@ class Parser(object) :
             except ParseError as error:
                 error.what()
             
+        return expr
+    
+    def _logic_or(self) -> Expr:
+        """
+            matches the rule:
+                logic_or -> logic_and ("or" logic_and)*
+        """
+        expr = self._logic_and()
+        
+        while self._match(TokenType.OR) :
+            operator = self._previous()
+            right = self._logic_and()
+            
+            expr = Expr.Logical(expr, operator, right)
+        
+        return expr
+        
+    def _logic_and(self) -> Expr:
+        """
+            matches the rule:
+                logic_and -> equality ("and" equality)*
+        """
+        expr = self._equality()
+        
+        while self._match(TokenType.AND) :
+            operator = self._previous()
+            right = self._equality()
+            
+            expr = Expr.Logical(expr, operator, right)
+        
         return expr
             
     def _equality(self) -> Expr:

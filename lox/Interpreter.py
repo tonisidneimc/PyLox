@@ -86,6 +86,21 @@ class Interpreter :
             #returns the literal value
             return expr.value
         
+        elif isinstance(expr, Expr.Logical) :
+            #returns the true value of the expression
+            left = self._evaluate(expr.left)
+            
+            #tries to short-circuit : if after evaluating the left operand, 
+            #the result of the logical expression is known, do not evaluate the right operand
+            if expr.operator.tokenValue == TokenType.OR :
+                if self._isTruth(left): #true or anything else is true 
+                    return left
+            elif expr.operator.tokenValue == TokenType.AND :
+                if not self._isTruth(left): #false and anything else is false
+                    return left
+            
+            return self._evaluate(expr.right) #left operand only is logically inconclusive, so it evaluates the right
+        
         elif isinstance(expr, Expr.Variable) :
             #returns the variable's state/value
             return self._environment.get(expr.name)
@@ -145,7 +160,6 @@ class Interpreter :
         
         for operand in operands :
             if not isinstance(operand, float) :
-                print(type(operand))
                 raise RunTimeError(operator, "All operands must be numbers.")
         return
     
