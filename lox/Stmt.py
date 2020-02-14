@@ -2,6 +2,10 @@ from . import Expr
 from . import Token
 
 class Stmt(object) : pass
+
+class Block(Stmt) :
+    def __init__(self, statements : list) :
+        self.statements = statements 
     
 class Expression(Stmt) :
     def __init__(self, expr : Expr) :

@@ -48,7 +48,7 @@ class Lox :
             cls._hadError = True; return
         
         #for statement in statements :
-        #    printSst(statement)
+        #    printSst(statement, level = 0)
         #    print()
         
         cls._interpreter.Interpret(statements)

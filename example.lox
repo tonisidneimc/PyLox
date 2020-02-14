@@ -1,8 +1,13 @@
-var a;
-var b;
-var c;
-a = b = 3 * (-4 + 9);
-print a;
-print b;
-c = b + 9 / 4;
-print c;
+var a = 3; //global
+{
+    var b = 5; //outer block
+    {
+        var c = 7; //outer block
+        {
+            //inner block
+            print a + b * c; //38
+            a = 10; 
+        }
+        print a + b * c; //45
+    }
+}

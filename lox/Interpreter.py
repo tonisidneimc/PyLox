@@ -17,7 +17,7 @@ __all__ = ["Interpreter"]
 class Interpreter :
 
     def __init__(self) :
-        self._environment = Environment()
+        self._environment = Environment() #global scope
         self._hadError = False
     
     def Interpret(self, statements : list) -> None:
@@ -35,32 +35,60 @@ class Interpreter :
     
     def _execute(self, statement : Stmt) -> None:
         #executes a statement
-        if isinstance(statement, Stmt.Expression) :
+        
+        if isinstance(statement, Stmt.Block) :
+            #enters into a new nested scope
+            self._executeBlock(statement.statements, Environment(self._environment)); return
+        
+        elif isinstance(statement, Stmt.Expression) :
             self._evaluate(statement.expression); return
                         
         elif isinstance(statement, Stmt.Print) :
+            #print some expression in the current scope
             value = self._evaluate(statement.expression)
             sys.stdout.write(self._stringify(value) + "\n"); return
         
         elif isinstance(statement, Stmt.Var) :
+            #define some variable in the current scope
             value = None if statement.initializer is None else self._evaluate(statement.initializer)
-            
             self._environment.define(statement.name.lexeme, value); 
+    
+    
+    def _executeBlock(self, statements : list, environment : Environment) :
+        #enter into a new block of code/scope
+        
+        previous = self._environment #the current scope
+        
+        try :
+            #enters into a new scope
+            #allows to assign, define and access variables in the inner scope
+            self._environment = environment
+            
+            for stmt in statements :
+                self._execute(stmt) #execute block's declarations
+        
+        finally :
+            #restores the current scope
+            self._environment = previous
+            
             
     def _evaluate(self, expr : Expr) -> object:
         #implements evaluation logic for each type of expression node in AST
         
         if isinstance(expr, Expr.Literal) :
+            #returns the literal value
             return expr.value
         
         elif isinstance(expr, Expr.Variable) :
+            #returns the variable's state/value
             return self._environment.get(expr.name)
         
         elif isinstance(expr, Expr.Assign) :
+            #assign to a variable defined in the current scope
             value = self._evaluate(expr.value)
             self._environment.assign(expr.name, value)
             
-            return value
+            return value #allows cascading values
             
         elif isinstance(expr, Expr.Grouping) :
             #recursively evaluates the grouping subexpression, and returns the result
@@ -77,7 +105,7 @@ class Interpreter :
             elif expr.operator.tokenValue == TokenType.BANG :
                 return not(self._isTruth(right))
             
-            return None
+            return None #will not be reached
         
         elif isinstance(expr, Expr.Binary) :
             #recursively evaluates left and right operands and apply operation as: left <operator> right 

@@ -31,7 +31,7 @@ class Parser(object) :
                 
         return statements
     
-    def _declaration(self) :
+    def _declaration(self) -> Stmt:
         """
             matches to one of the rules :
                 declaration -> varDeclaration
@@ -50,7 +50,7 @@ class Parser(object) :
             self._synchronize()
             return None
     
-    def _varDeclaration(self) :
+    def _varDeclaration(self) -> Stmt:
         """
             matches the rule :
                 varDeclaration -> "var" IDENTIFIER ("=" expression)? ";"
@@ -68,9 +68,13 @@ class Parser(object) :
             matches to one of the rules :
                 statement -> exprStmt
                 statement -> printStmt
+                statement -> block
         """
         if self._match(TokenType.PRINT) :
             return self._printStmt()
+        
+        elif self._match(TokenType.LEFT_BRACE) :
+            return Stmt.Block(self._block())
             
         return self._exprStmt()
      
@@ -93,13 +97,31 @@ class Parser(object) :
                 printStmt -> "print" expression ";"
         """
         value = self._expression()
+        
         try :
             self._consume(TokenType.SEMICOLON, errorMessage = "Expected ';' after value.")
         except ParseError:
             raise
         else :
             return Stmt.Print(value)
+    
+    def _block(self) -> Stmt:
+        """
+            matches the rule:
+                block -> "{" declaration* "}"
+        """
+        statements = []
+        
+        while not self._check(TokenType.RIGHT_BRACE) and not self._isAtEnd() :
+            statements.append(self._declaration())
             
+        try :
+            self._consume(TokenType.RIGHT_BRACE, errorMessage = "Expected '}' after block.")
+        except ParseError :
+            raise
+        else :
+            return statements
+        
     def _expression(self) -> Expr:
         """
             matches the rule: 

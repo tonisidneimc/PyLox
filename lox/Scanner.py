@@ -93,11 +93,11 @@ class Scanner(object) :
             return self._identifier()
         
         else : 
-            raise ScanError(self._line, "Unexpected character '{}'.".format(char))
+            raise ScanError(self._line, f"Unexpected character '{char}'")
     
     
     def _addToken(self, token : TokenType, literal : object = None) -> None :
-        #creates a token, with lexeme beginning from _start until _current, and append it to the token list
+        #creates a token, with lexeme at _source from _start until _current - 1
 
         text = self._source[self._start : self._current]
         self._tokens.append(Token(token, text, literal, self._line))
