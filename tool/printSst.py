@@ -18,6 +18,14 @@ def printSst(stmt : Stmt, level : int) :
         printSst(stmt.thenBranch, level + 2)
         print("----" * (level + 1) + "else : ")
         printSst(stmt.elseBranch, level + 2)
+    
+    elif type(stmt) == Stmt.While :
+        print("----" * level + "While  statement: ", end = "")
+        printAst(stmt.condition)
+        print()
+        print("----" * (level + 1) + "body : ")
+        printSst(stmt.body, level + 2)
+        print("----" * (level + 1) + "end of body.")
         
     elif type(stmt) == Stmt.Expression :
         print("----" * level + "Expression statement: ", end = "")

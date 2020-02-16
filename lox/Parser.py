@@ -68,14 +68,22 @@ class Parser(object) :
             matches to one of the rules :
                 statement -> exprStmt
                 statement -> ifStmt
+                statement -> forStmt
                 statement -> printStmt
+                statement -> whileStmt
                 statement -> block
         """
         if self._match(TokenType.IF) :
             return self._ifStmt()
+        
+        elif self._match(TokenType.FOR) :
+            return self._forStmt()
             
         elif self._match(TokenType.PRINT) :
             return self._printStmt()
+        
+        elif self._match(TokenType.WHILE) :
+            return self._whileStmt()
         
         elif self._match(TokenType.LEFT_BRACE) :
             return Stmt.Block(self._block())
@@ -92,7 +100,7 @@ class Parser(object) :
         self._consume(TokenType.RIGHT_PAREN, errorMessage = "Expect ')' after if condition.")
         
         thenBranch = self._statement()
-        elseBranch = None if not self._match(TokenType.ELSE) else self._statement()
+        elseBranch = self._statement() if self._match(TokenType.ELSE) else None 
         
         return Stmt.If(condition, thenBranch, elseBranch)        
          
@@ -109,6 +117,60 @@ class Parser(object) :
         else :
             return Stmt.Expression(expr)
     
+    def _forStmt(self) -> Stmt:
+        """
+            matches the rule:  
+                forStmt -> "for" "(" (varDeclaration | exprStmt | ";") expression? ";" expression? ")" statement
+        
+            It parses the for loop:
+            
+                for(initializer; condition; increment) statement;
+           
+            as a while loop:
+            
+                {
+                   initializer
+                       while(condition){
+                           statement
+                           increment
+                       }
+                }
+        """
+        try:
+            self._consume(TokenType.LEFT_PAREN, errorMessage = "Expect '(' after 'for'.")
+            
+            #initializer statement is optional
+            if self._match(TokenType.SEMICOLON) : initializer = None
+            elif self._match(TokenType.VAR) : initializer = self._varDeclaration()
+            else : initializer = self._exprStmt()
+            
+            #condition expression is optional, validates true condition (infinity loop) if no condition is provided
+            condition = self._expression() if not self._check(TokenType.SEMICOLON) else Expr.Literal(True)
+            self._consume(TokenType.SEMICOLON, errorMessage = "Expect ';' after loop condition.")
+            
+            #increment expression is optional
+            increment = self._expression() if not self._check(TokenType.RIGHT_PAREN) else None
+            self._consume(TokenType.RIGHT_PAREN, errorMessage = "Expect ')' after for clauses.")
+            
+            statements = [] #list of statements in the while statement body
+            
+            statements.append(self._statement()) #parses the statement in the for loop body
+            if increment is not None : 
+                #adds increment expression to the end of the while body
+                statements.append(Stmt.Expression(increment))
+            
+            body = Stmt.Block(statements)
+            
+            if initializer is None :
+                #no initializer is provided, so it parses it as a normal while statement
+                return Stmt.While(condition, body)
+            else :
+                #an initializer is provided, so creates a block with the initializer and the while statements
+                return Stmt.Block([initializer, Stmt.While(condition, body)]) 
+            
+        except ParseError:
+            raise
+    
     def _printStmt(self) -> Stmt:
         """
             matches the rule:
@@ -123,6 +185,22 @@ class Parser(object) :
         else :
             return Stmt.Print(value)
     
+    def _whileStmt(self) -> Stmt :
+        """
+            matches the rule:
+                whileStmt -> "while" "(" expression ")" statement
+        """
+        try :
+            self._consume(TokenType.LEFT_PAREN, errorMessage = "Expect '(' after 'while'.")
+            condition = self._expression()
+            self._consume(TokenType.RIGHT_PAREN, errorMessage = "Expect ')' after condition.")
+            body = self._statement()
+        
+        except ParseError:
+            raise
+        else : 
+            return Stmt.While(condition, body)
+        
     def _block(self) -> Stmt:
         """
             matches the rule:

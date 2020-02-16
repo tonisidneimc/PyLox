@@ -17,6 +17,11 @@ class If(Stmt) :
         self.thenBranch = thenBranch
         self.elseBranch = elseBranch
 
+class While(Stmt) :
+    def __init__(self, condition : Expr, body : Stmt) :
+        self.condition = condition
+        self.body = body
+
 class Print(Stmt) :
     def __init__(self, expr : Expr) :
         self.expression = expr

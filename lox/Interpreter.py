@@ -49,6 +49,10 @@ class Interpreter :
             elif statement.elseBranch is not None :
                 self._execute(statement.elseBranch)
             return None
+        
+        elif isinstance(statement, Stmt.While) :
+            while self._isTruth(self._evaluate(statement.condition)) :
+                self._execute(statement.body)
                         
         elif isinstance(statement, Stmt.Print) :
             #print some expression in the current scope

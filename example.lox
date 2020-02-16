@@ -1,20 +1,27 @@
-var a = 3; //global
-{
-    var b = 8; //outer block
-    {
-        var c = 7; //outer block
-        {
-            //inner block
-            if (a >= b)
-                if(a >= c) //a >= b and a >= c
-                    print "a is greater";
-                else //b < a < c
-                    print "c is greater";
-            else //a < b
-                if (b >= c) //b > a and b >= c 
-                    print "b is greater";     
-                else //a < b < c
-                    print "c is greater";
-        }
-    }
+//calculates the nth term of the fibonacci sequence
+
+var n = 10;
+var fib1 = 1;
+var fib2 = 1;
+var soma = 0;
+
+var count = 3;
+
+while(count <= n){
+    soma = fib1 + fib2;
+    fib1 = fib2;
+    fib2 = soma;
+    count = count + 1;
 }
+
+/*
+the above while statement is equivalent to:
+for(var count = 3; count <= n; count = count + 1){
+    soma = fib1 + fib2;
+    fib1 = fib2;
+    fib2 = soma;
+}
+*/
+
+print fib2; //55
+
