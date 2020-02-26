@@ -32,6 +32,20 @@ def printSst(stmt : Stmt, level : int) :
         printAst(stmt.expression)
         print()
     
+    elif type(stmt) == Stmt.Function :
+        print("----" * level + "Function declaration: ", end = "")
+        print(stmt.name.lexeme, end = "")
+        print("(", end = "")
+        for arg in stmt.params : print(arg.lexeme, end = ",")
+        print("){")
+        for statement in stmt.body : printSst(statement, level + 1)
+        print("}")
+    
+    elif type(stmt) == Stmt.Return :
+        print("----" * level + "Return Statement: return", end = " ")
+        printAst(stmt.value)
+        print()
+    
     elif type(stmt) == Stmt.Print :
         print("----" * level + "Print statement: ", end = "")
         printAst(stmt.expression)

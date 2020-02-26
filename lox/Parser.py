@@ -34,11 +34,19 @@ class Parser(object) :
     def _declaration(self) -> Stmt:
         """
             matches to one of the rules :
+                declaration -> funDeclaration
                 declaration -> varDeclaration
                 declaration -> statement
         """
         try :
-            if self._match(TokenType.VAR) :
+            if self._match(TokenType.FUN) :
+                """
+                    matches the rule: 
+                        funDeclaration -> "fun" function
+                """
+                return self._function("function")
+            
+            elif self._match(TokenType.VAR) :
                 return self._varDeclaration()
             
             return self._statement()
@@ -49,6 +57,44 @@ class Parser(object) :
             #going into panic mode
             self._synchronize()
             return None
+    
+    def _function(self, what : str) -> Stmt: #for functions and class methods
+        """
+            matches the rule :
+                 function -> IDENTIFIER "(" parameters? ")" block
+        """
+        functionName = self._consume(TokenType.IDENTIFIER, errorMessage = f"Expect {what} name.")
+        
+        self._consume(TokenType.LEFT_PAREN, errorMessage = f"Expect '(' after {what} name.")
+        
+        parametersList = []
+        
+        if not self._check(TokenType.RIGHT_PAREN) : #otherwise the function has no arguments
+            while True:
+                #matches the rule: parameters -> IDENTIFIER ("," IDENTIFIER)*
+                try :
+                    if len(parametersList) >= 255:
+                        raise ParseError(self._peek(), "Functions with more than 255 parameters are not allowed.")
+                
+                except ParseError as error:    
+                    error.what()
+                else :
+                    try :
+                        parameter = self._consume(TokenType.IDENTIFIER, errorMessage = "Expect parameter name.")
+                    
+                    except ParseError as error:
+                        error.what()
+                    else :
+                        parametersList.append(parameter)
+                finally :
+                    if not self._match(TokenType.COMMA) : break            
+        
+        self._consume(TokenType.RIGHT_PAREN, errorMessage = "Expect ')' after parameters list.")
+    
+        self._consume(TokenType.LEFT_BRACE, errorMessage = f"Expect '{'{'}' before {what} body.") 
+        body = self._block() #enclosing brace '}' is consumed by block()
+        
+        return Stmt.Function(functionName, parametersList, body) 
     
     def _varDeclaration(self) -> Stmt:
         """
@@ -71,6 +117,7 @@ class Parser(object) :
                 statement -> forStmt
                 statement -> printStmt
                 statement -> whileStmt
+                statement -> returnStmt
                 statement -> block
         """
         if self._match(TokenType.IF) :
@@ -84,6 +131,9 @@ class Parser(object) :
         
         elif self._match(TokenType.WHILE) :
             return self._whileStmt()
+            
+        elif self._match(TokenType.RETURN) :
+            return self._returnStmt()    
         
         elif self._match(TokenType.LEFT_BRACE) :
             return Stmt.Block(self._block())
@@ -200,6 +250,19 @@ class Parser(object) :
             raise
         else : 
             return Stmt.While(condition, body)
+    
+    def _returnStmt(self) -> Stmt:
+        """
+            matches the rule:
+                returnStmt -> "return" expression? ";"
+        """
+        keyword = self._previous()
+        
+        value = self._expression() if not self._check(TokenType.SEMICOLON) else None
+        
+        self._consume(TokenType.SEMICOLON, errorMessage = "Expect ';' after return value.")
+        
+        return Stmt.Return(keyword, value)
         
     def _block(self) -> Stmt:
         """
@@ -349,7 +412,7 @@ class Parser(object) :
             matches to one of the rules:
                 unary -> ("!" unary)*
                 unary -> ("-" unary)*  
-                unary -> primary
+                unary -> call
         """
         if self._match(TokenType.BANG, TokenType.MINUS) :
             operator = self._previous()
@@ -357,8 +420,46 @@ class Parser(object) :
             
             return Expr.Unary(operator, right)
             
-        return self._primary()
-     
+        return self._call()
+        
+    def _call(self) -> Expr :
+        """
+            matches the rule:
+                call -> primary ( "(" arguments? ")")*
+        """
+        expr = self._primary()
+        
+        #parses an entire function call
+        while True :
+            if not self._match(TokenType.LEFT_PAREN) : break;
+            else : 
+                expr = self._finishCall(expr)
+            
+        return expr
+    
+    def _finishCall(self, callee : Expr) -> Expr :
+        #parses an single function call
+        #callee is any single expression that can be evaluated to a function
+        arguments = []
+        
+        if not self._check(TokenType.RIGHT_PAREN) :
+            while True :
+            #parses the remaining arguments in this function call
+                try :
+                    #validates maximum number of arguments allowed
+                    if len(arguments) >= 255 :
+                        raise ParseError(self._peek(), "Expected less than 255 arguments to the function.")
+                except ParseError as error:
+                    error.what() #report it now, don't enter in panic mode 
+                else :
+                    arguments.append(self._expression())
+                    
+                    if not self._match(TokenType.COMMA) : break
+        
+        paren = self._consume(TokenType.RIGHT_PAREN, errorMessage = "Expect ')' after arguments list.")
+        
+        return Expr.Call(callee, paren, arguments)
+        
     def _primary(self) -> Expr :
         """
             matches to one of the rules: 

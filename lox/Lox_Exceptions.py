@@ -48,3 +48,7 @@ class RunTimeError(RuntimeError, Lox_Exceptions) :
         
     def what(self) :
         return self.runtime_error()
+
+class ReturnException(Exception) :
+    def __init__(self, value : object) :
+        self._value = value

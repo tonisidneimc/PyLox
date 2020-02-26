@@ -1,27 +1,50 @@
+//comparison between iteration and recursion performance
 //calculates the nth term of the fibonacci sequence
 
-var n = 10;
-var fib1 = 1;
-var fib2 = 1;
-var soma = 0;
+//iteratively
+fun fibonacci_1(n){
+    var fib1 = 1;
+    var fib2 = 1;
+    var soma = 0;
 
-var count = 3;
+    var count = 3;
 
-while(count <= n){
-    soma = fib1 + fib2;
-    fib1 = fib2;
-    fib2 = soma;
-    count = count + 1;
+    while(count <= n){
+        soma = fib1 + fib2;
+        fib1 = fib2;
+        fib2 = soma;
+        count = count + 1;
+    }
+    /*
+    the above while statement is equivalent to:
+    for(var count = 3; count <= n; count = count + 1){
+        soma = fib1 + fib2;
+        fib1 = fib2;
+        fib2 = soma;
+    }
+    */
+    return fib2;
 }
 
-/*
-the above while statement is equivalent to:
-for(var count = 3; count <= n; count = count + 1){
-    soma = fib1 + fib2;
-    fib1 = fib2;
-    fib2 = soma;
+//recursively
+fun fibonacci_2(n){
+    if(n == 2 or n == 1){
+        return 1;
+    }
+    else{
+        return fibonacci_2(n - 2) + fibonacci_2(n - 1);
+    }
 }
-*/
 
-print fib2; //55
+var start = clock();
+fibonacci_1(8);
+var end = clock();
+print "time spent calculating the nth term of fibonacci iteratively:";
+print end - start;
+
+var start = clock();
+fibonacci_2(8);
+var end = clock();
+print "time spent calculating the nth term of fibonacci recursively:";
+print end - start;
 

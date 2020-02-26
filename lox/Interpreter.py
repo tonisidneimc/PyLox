@@ -1,10 +1,13 @@
 import sys
+import time
 from .TokenType import *
 from .Token import *
-from .Lox_Exceptions import RunTimeError
+from .Lox_Exceptions import RunTimeError, ReturnException
 from . import Expr
 from . import Stmt
 from .Environment import *
+from .Callable import *
+from .LoxFunction import *
 
 __all__ = ["Interpreter"]
 
@@ -17,9 +20,25 @@ __all__ = ["Interpreter"]
 class Interpreter :
 
     def __init__(self) :
-        self._environment = Environment() #global scope
         self._hadError = False
-    
+        self.globals = Environment() #global scope
+        self._environment = self.globals
+        
+        # native/built-in functions definition
+        
+        class Clock(Callable) :
+            def arity(self) : return 0;
+            def call(self, interpreter, arguments : list = []) : 
+                """Using built-in python function clock. According to its documentation, 'it returns the CPU time 
+                   or real time since the start of the process or since the first call to clock().  
+                   This has as much precision as the system records.'
+                """
+                return time.clock()
+            def __str__(self) :
+                return "<native function clock>"
+                
+        self.globals.define("clock", Clock())
+        
     def Interpret(self, statements : list) -> None:
         """
             interpret each Statement Syntax Tree from a parsed list of statements,
@@ -38,34 +57,47 @@ class Interpreter :
         
         if isinstance(statement, Stmt.Block) :
             #enters into a new nested scope
-            self._executeBlock(statement.statements, Environment(self._environment)); return
+            self.executeBlock(statement.statements, Environment(self._environment)); return
         
         elif isinstance(statement, Stmt.Expression) :
+            #evaluates this expression
             self._evaluate(statement.expression); return
         
+        elif isinstance(statement, Stmt.Function) :
+            #defines a function in the current environment
+            function = LoxFunction(statement)
+            self._environment.define(statement.name.lexeme, function); return
+        
         elif isinstance(statement, Stmt.If) :
+            #execute the if then/else statement
             if self._isTruth(self._evaluate(statement.condition)) :
                 self._execute(statement.thenBranch)
             elif statement.elseBranch is not None :
                 self._execute(statement.elseBranch)
-            return None
+            return;
         
         elif isinstance(statement, Stmt.While) :
+            #execute the while statement
             while self._isTruth(self._evaluate(statement.condition)) :
                 self._execute(statement.body)
+            return;
+        
+        elif isinstance(statement, Stmt.Return) :
+            value = None if statement.value is None else self._evaluate(statement.value)
+            raise ReturnException(value) #returns value
                         
         elif isinstance(statement, Stmt.Print) :
-            #print some expression in the current scope
+            #evaluates and print this expression
             value = self._evaluate(statement.expression)
             sys.stdout.write(self._stringify(value) + "\n"); return
         
         elif isinstance(statement, Stmt.Var) :
-            #define some variable in the current scope
+            #define this variable in the current environment
             value = None if statement.initializer is None else self._evaluate(statement.initializer)
-            self._environment.define(statement.name.lexeme, value); 
+            self._environment.define(statement.name.lexeme, value); return
     
     
-    def _executeBlock(self, statements : list, environment : Environment) :
+    def executeBlock(self, statements : list, environment : Environment) :
         #enter into a new block of code/scope
         
         previous = self._environment #the current scope
@@ -76,7 +108,7 @@ class Interpreter :
             self._environment = environment
             
             for stmt in statements :
-                self._execute(stmt) #execute block's declarations
+                self._execute(stmt) #execute block's statements
         
         finally :
             #restores the current scope
@@ -93,7 +125,6 @@ class Interpreter :
         elif isinstance(expr, Expr.Logical) :
             #returns the true value of the expression
             left = self._evaluate(expr.left)
-            
             #tries to short-circuit : if after evaluating the left operand, 
             #the result of the logical expression is known, do not evaluate the right operand
             if expr.operator.tokenValue == TokenType.OR :
@@ -115,6 +146,21 @@ class Interpreter :
             self._environment.assign(expr.name, value)
             
             return value #allows cascading values
+        
+        elif isinstance(expr, Expr.Call) : 
+            callee = self._evaluate(expr.callee) #recursively evaluates callee
+            
+            args = [self._evaluate(arg) for arg in expr.args]
+            
+            if not isinstance(callee, Callable) : #check if it evaluates to a callable defined function
+                raise RunTimeError(expr.paren, "Only calls to functions and classes are allowed.")
+            
+            function = callee
+            
+            if len(args) != function.arity() : 
+                raise RunTimeError(expr.paren, f"Expected {function.arity()} arguments, but got {len(args)}.")
+            
+            return function.call(self, args) #calls the function with their specific arguments
             
         elif isinstance(expr, Expr.Grouping) :
             #recursively evaluates the grouping subexpression, and returns the result
@@ -178,8 +224,7 @@ class Interpreter :
             return quocient        
             
     def _add_or_concat(self, operator : Token, left : object, right : object) -> object:
-        #implements logic for the PLUS (+) operator 
-        
+        #implements logic for the PLUS (+) operator
         if isinstance(left, float) and isinstance(right, float) :
             #adds two numbers as <float> + <float>
             return float(left) + float(right)

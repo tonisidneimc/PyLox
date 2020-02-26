@@ -15,7 +15,14 @@ def printAst(expr : Expr) :
         printAst(expr.left)
         print(" " + expr.operator.lexeme, end = " ")
         printAst(expr.right)
-   
+    
+    elif type(expr) == Expr.Call :
+        print("Call function: ", end = "")
+        printAst(expr.callee)
+        print("(", end = "")
+        for arg in expr.args : printAst(arg); print(",", end = "")
+        print(")", end = "")
+        
     elif type(expr) == Expr.Assign :
         print(expr.name.lexeme, end = " = ")
         printAst(expr.value)
