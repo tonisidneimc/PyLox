@@ -1,6 +1,7 @@
 import sys
 from lox.Scanner import *  
 from lox.Parser import *
+from lox.Resolver import *
 from lox.Interpreter import *
 from tool.printSst import printSst
     
@@ -8,6 +9,7 @@ class Lox :
     _hadError = False
     _hadRuntimeError = False
     _interpreter = Interpreter()
+    _resolver = Resolver(_interpreter)
     
     @classmethod
     def _hasAnyError(cls, step : object) -> bool :
@@ -50,6 +52,15 @@ class Lox :
         #for statement in statements :
         #    printSst(statement, level = 0)
         #    print()
+        
+        for statement in statements : 
+            cls._resolver.resolve(statement)
+        
+        if cls._hasAnyError(cls._resolver) :
+            cls._hadError = True; return
+        
+        #for expr in cls._interpreter._locals.keys() :
+        #    print (expr.name.lexeme, "->" ,cls._interpreter._locals[expr])
         
         cls._interpreter.Interpret(statements)
         

@@ -6,7 +6,7 @@ class Stmt(object) : pass
 class Block(Stmt) :
     #block -> "{" statements "}"
     def __init__(self, statements : list) :
-        self.statements = statements 
+        self.statements = statements
     
 class Expression(Stmt) :
     #expression -> Unary | Binary | Grouping | Literal | Logical | Variable | Assign | Call
@@ -14,8 +14,8 @@ class Expression(Stmt) :
         self.expression = expr
 
 class Function(Stmt) :
-    #function -> fun <name>(params) block
-    def __init__(self, name : Token, params : list, body : list) :
+    #function -> fun <name>(params) body
+    def __init__(self, name : Token, params : list, body : Block) :
         self.name = name
         self.params = params
         self.body = body

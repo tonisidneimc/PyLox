@@ -1,0 +1,17 @@
+/*
+  The resolver step allows a correspondence between the result obtained 
+  when interpreting a given statement, where a variable appears, 
+  and the result of performing a semantic analysis on the same statement. 
+  In the process, all variable references are resolved to their specific declaration.
+*/
+
+var a = "global";
+
+{
+    fun showA(){
+        print a;
+    }
+    showA();
+    var a = "block";
+    showA();
+}

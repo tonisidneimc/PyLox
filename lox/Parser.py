@@ -63,9 +63,9 @@ class Parser(object) :
             matches the rule :
                  function -> IDENTIFIER "(" parameters? ")" block
         """
-        functionName = self._consume(TokenType.IDENTIFIER, errorMessage = f"Expect {what} name.")
+        functionName = self._consume(TokenType.IDENTIFIER, errorMessage = f"Expected {what} name.")
         
-        self._consume(TokenType.LEFT_PAREN, errorMessage = f"Expect '(' after {what} name.")
+        self._consume(TokenType.LEFT_PAREN, errorMessage = f"Expected '(' after {what} name.")
         
         parametersList = []
         
@@ -80,7 +80,7 @@ class Parser(object) :
                     error.what()
                 else :
                     try :
-                        parameter = self._consume(TokenType.IDENTIFIER, errorMessage = "Expect parameter name.")
+                        parameter = self._consume(TokenType.IDENTIFIER, errorMessage = "Expected parameter name.")
                     
                     except ParseError as error:
                         error.what()
@@ -89,9 +89,9 @@ class Parser(object) :
                 finally :
                     if not self._match(TokenType.COMMA) : break            
         
-        self._consume(TokenType.RIGHT_PAREN, errorMessage = "Expect ')' after parameters list.")
+        self._consume(TokenType.RIGHT_PAREN, errorMessage = "Expected ')' after parameter list.")
     
-        self._consume(TokenType.LEFT_BRACE, errorMessage = f"Expect '{'{'}' before {what} body.") 
+        self._consume(TokenType.LEFT_BRACE, errorMessage = f"Expected '{'{'}' before {what} body.") 
         body = self._block() #enclosing brace '}' is consumed by block()
         
         return Stmt.Function(functionName, parametersList, body) 
@@ -136,18 +136,18 @@ class Parser(object) :
             return self._returnStmt()    
         
         elif self._match(TokenType.LEFT_BRACE) :
-            return Stmt.Block(self._block())
+            return self._block()
             
         return self._exprStmt()
-     
+    
     def _ifStmt(self) -> Stmt:
         """
             matches the rule:
                 ifStmt -> "if" "(" expression ")" statement ("else" statement)?
         """
-        self._consume(TokenType.LEFT_PAREN, errorMessage = "Expect '(' after 'if'.")
+        self._consume(TokenType.LEFT_PAREN, errorMessage = "Expected '(' after 'if'.")
         condition = self._expression()
-        self._consume(TokenType.RIGHT_PAREN, errorMessage = "Expect ')' after if condition.")
+        self._consume(TokenType.RIGHT_PAREN, errorMessage = "Expected ')' after if condition.")
         
         thenBranch = self._statement()
         elseBranch = self._statement() if self._match(TokenType.ELSE) else None 
@@ -187,7 +187,7 @@ class Parser(object) :
                 }
         """
         try:
-            self._consume(TokenType.LEFT_PAREN, errorMessage = "Expect '(' after 'for'.")
+            self._consume(TokenType.LEFT_PAREN, errorMessage = "Expected '(' after 'for'.")
             
             #initializer statement is optional
             if self._match(TokenType.SEMICOLON) : initializer = None
@@ -196,11 +196,11 @@ class Parser(object) :
             
             #condition expression is optional, validates true condition (infinity loop) if no condition is provided
             condition = self._expression() if not self._check(TokenType.SEMICOLON) else Expr.Literal(True)
-            self._consume(TokenType.SEMICOLON, errorMessage = "Expect ';' after loop condition.")
+            self._consume(TokenType.SEMICOLON, errorMessage = "Expected ';' after loop condition.")
             
             #increment expression is optional
             increment = self._expression() if not self._check(TokenType.RIGHT_PAREN) else None
-            self._consume(TokenType.RIGHT_PAREN, errorMessage = "Expect ')' after for clauses.")
+            self._consume(TokenType.RIGHT_PAREN, errorMessage = "Expected ')' after for clauses.")
             
             statements = [] #list of statements in the while statement body
             
@@ -241,9 +241,9 @@ class Parser(object) :
                 whileStmt -> "while" "(" expression ")" statement
         """
         try :
-            self._consume(TokenType.LEFT_PAREN, errorMessage = "Expect '(' after 'while'.")
+            self._consume(TokenType.LEFT_PAREN, errorMessage = "Expected '(' after 'while'.")
             condition = self._expression()
-            self._consume(TokenType.RIGHT_PAREN, errorMessage = "Expect ')' after condition.")
+            self._consume(TokenType.RIGHT_PAREN, errorMessage = "Expected ')' after condition.")
             body = self._statement()
         
         except ParseError:
@@ -260,7 +260,7 @@ class Parser(object) :
         
         value = self._expression() if not self._check(TokenType.SEMICOLON) else None
         
-        self._consume(TokenType.SEMICOLON, errorMessage = "Expect ';' after return value.")
+        self._consume(TokenType.SEMICOLON, errorMessage = "Expected ';' after return value.")
         
         return Stmt.Return(keyword, value)
         
@@ -279,7 +279,7 @@ class Parser(object) :
         except ParseError :
             raise
         else :
-            return statements
+            return Stmt.Block(statements)
         
     def _expression(self) -> Expr:
         """
@@ -456,7 +456,7 @@ class Parser(object) :
                     
                     if not self._match(TokenType.COMMA) : break
         
-        paren = self._consume(TokenType.RIGHT_PAREN, errorMessage = "Expect ')' after arguments list.")
+        paren = self._consume(TokenType.RIGHT_PAREN, errorMessage = "Expected ')' after arguments list.")
         
         return Expr.Call(callee, paren, arguments)
         
@@ -484,7 +484,7 @@ class Parser(object) :
             return Expr.Literal(self._previous().literal)
         
         elif self._match(TokenType.IDENTIFIER) :
-            return Expr.Variable(self._previous()) 
+            return Expr.Variable(self._previous())
             
         elif self._match(TokenType.LEFT_PAREN) :
             expr = self._expression()

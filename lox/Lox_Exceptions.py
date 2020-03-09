@@ -38,6 +38,17 @@ class ParseError(Lox_Exceptions) :
     def what(self) :
         return self.parse_error()
 
+class CompileError(Lox_Exceptions) :
+    def __init__(self, token : Token, message : str) :
+        self._token = token
+        self._message = message
+        
+    def compile_error(self) -> None:
+        Lox_Exceptions.report(self._token.line, " at '" + self._token.lexeme + "'", self._message)
+        
+    def what(self) :
+        return self.compile_error()
+
 class RunTimeError(RuntimeError, Lox_Exceptions) :
     def __init__(self, token : Token, message : str) :
         self._token = token

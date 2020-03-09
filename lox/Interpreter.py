@@ -23,6 +23,7 @@ class Interpreter :
         self._hadError = False
         self.globals = Environment() #global scope
         self._environment = self.globals
+        self._locals = {}
         
         # native/built-in functions definition
         
@@ -54,10 +55,9 @@ class Interpreter :
     
     def _execute(self, statement : Stmt) -> None:
         #executes a statement
-        
         if isinstance(statement, Stmt.Block) :
             #enters into a new nested scope
-            self.executeBlock(statement.statements, Environment(self._environment)); return
+            self.executeBlock(statement, Environment(self._environment)); return
         
         elif isinstance(statement, Stmt.Expression) :
             #evaluates this expression
@@ -65,7 +65,7 @@ class Interpreter :
         
         elif isinstance(statement, Stmt.Function) :
             #defines a function in the current environment
-            function = LoxFunction(statement)
+            function = LoxFunction(statement, self._environment)
             self._environment.define(statement.name.lexeme, function); return
         
         elif isinstance(statement, Stmt.If) :
@@ -74,13 +74,13 @@ class Interpreter :
                 self._execute(statement.thenBranch)
             elif statement.elseBranch is not None :
                 self._execute(statement.elseBranch)
-            return;
+            return
         
         elif isinstance(statement, Stmt.While) :
             #execute the while statement
             while self._isTruth(self._evaluate(statement.condition)) :
                 self._execute(statement.body)
-            return;
+            return
         
         elif isinstance(statement, Stmt.Return) :
             value = None if statement.value is None else self._evaluate(statement.value)
@@ -96,24 +96,32 @@ class Interpreter :
             value = None if statement.initializer is None else self._evaluate(statement.initializer)
             self._environment.define(statement.name.lexeme, value); return
     
-    
-    def executeBlock(self, statements : list, environment : Environment) :
+    def executeBlock(self, block : Stmt.Block, environment : Environment) :
         #enter into a new block of code/scope
         
         previous = self._environment #the current scope
-        
         try :
             #enters into a new scope
             #allows to assign, define and access variables in the inner scope
             self._environment = environment
             
-            for stmt in statements :
+            for stmt in block.statements :
                 self._execute(stmt) #execute block's statements
         
         finally :
             #restores the current scope
             self._environment = previous
-            
+    
+    def _resolve(self, expr : Expr, depth : int) -> None:
+        self._locals[expr] = depth; return             
+    
+    def _findVariable(self, name : Token, expr : Expr) :
+        try :
+            distance = self._locals[expr]
+        except KeyError :
+            return self.globals.get(name)
+        else :
+            return self._environment.getAt(distance, name.lexeme)
             
     def _evaluate(self, expr : Expr) -> object:
         #implements evaluation logic for each type of expression node in AST
@@ -137,15 +145,22 @@ class Interpreter :
             return self._evaluate(expr.right) #left operand only is logically inconclusive, so it evaluates the right
         
         elif isinstance(expr, Expr.Variable) :
-            #returns the variable's state/value
-            return self._environment.get(expr.name)
+            #returns the variable's state/value    
+            return self._findVariable(expr.name, expr)
         
         elif isinstance(expr, Expr.Assign) :
             #assign to a variable defined in the current scope
             value = self._evaluate(expr.value)
-            self._environment.assign(expr.name, value)
             
-            return value #allows cascading values
+            try : 
+                distance = self._locals[expr]
+            except KeyError :
+                self.globals.assign(expr.name, value)
+            else :
+                self._environment.assignAt(distance, expr.name, value)
+            
+            finally :
+                return value #allows cascading values
         
         elif isinstance(expr, Expr.Call) : 
             callee = self._evaluate(expr.callee) #recursively evaluates callee
@@ -259,9 +274,13 @@ class Interpreter :
         
         if obj == None : return "nil"
         
-        if isinstance(obj, float) :
+        elif isinstance(obj, float) :
             text = str(obj)
             #discards zeroed mantissa
             return (text[:-2] if text[-2:] == ".0" else text)       
+        
+        elif obj == True : return "true"
+        
+        elif obj == False : return "false"
         
         return str(obj)

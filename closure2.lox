@@ -1,0 +1,22 @@
+/*
+  The implementation of Closures allows accessing a value of a variable 
+  by taking a 'snapshot' of the current state, 
+  when that variable was referred to.
+*/
+
+fun f(){
+    var i = 0;
+    fun counter(){
+        i = i + 1;
+        //i is defined in an extern scope,
+        //but can be accessed at runtime here
+        print i;
+    }
+    return counter;
+}
+
+var count = f();
+
+for(var i = 0; i < 10; i = i + 1){
+    count();
+}

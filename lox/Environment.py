@@ -16,7 +16,6 @@ class Environment :
     
     def get(self, name : Token) -> object:
         #looks up to the variable's value
-        
         #searches for the definition of the variable in the local scope
         if name.lexeme in self._values :
             return self._values[name.lexeme]
@@ -26,6 +25,17 @@ class Environment :
             return self._enclosing.get(name)
             
         raise RunTimeError(name, "Undefined variable '" + name.lexeme + "'.")
+    
+    def getAt(self, distance : int, name : str) :
+        environment = self._ancestor(distance)
+        return environment._values[name]
+    
+    def _ancestor(self, distance : int) :
+        environment = self
+        for i in range(distance) :
+            environment = environment._enclosing
+            
+        return environment
     
     def assign(self, name : Token, value : object) -> None:
         #assign a value to an existing variable
@@ -40,3 +50,7 @@ class Environment :
         
         #not allowed to create a new variable
         raise RunTimeError(name, "Undefined variable '" + name.lexeme + "'.")
+   
+    def assignAt(self, distance : int, name : Token, value : object) -> None:
+        environment = self._ancestor(distance)
+        environment._values[name.lexeme] = value; return    
