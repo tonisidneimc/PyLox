@@ -2,7 +2,7 @@ from . import Expr
 from . import Stmt
 from .Token import *
 from .TokenType import *
-from .Lox_Exceptions import ParseError
+from .LoxExceptions import ParseError
 
 __all__ = ["Parser"]
 
@@ -34,12 +34,20 @@ class Parser(object) :
     def _declaration(self) -> Stmt:
         """
             matches to one of the rules :
+                declaration -> classDeclaration
                 declaration -> funDeclaration
                 declaration -> varDeclaration
                 declaration -> statement
         """
         try :
-            if self._match(TokenType.FUN) :
+            if self._match(TokenType.CLASS) :
+                """
+                    matches the rule:
+                        classDeclaration -> "class" class
+                """
+                return self._class()
+                
+            elif self._match(TokenType.FUN) :
                 """
                     matches the rule: 
                         funDeclaration -> "fun" function
@@ -57,6 +65,22 @@ class Parser(object) :
             #going into panic mode
             self._synchronize()
             return None
+    
+    def _class(self) -> Stmt:
+        """
+            matches the rule :
+                class -> IDENTIFIER "{" function* "}"
+        """
+        name = self._consume(TokenType.IDENTIFIER, errorMessage = "Expect class name.")
+        self._consume(TokenType.LEFT_BRACE, errorMessage = "Expect '{'{'}' before class body.")
+        
+        methods = []
+        while not self._check(TokenType.RIGHT_BRACE) and not self._isAtEnd() :
+            methods.append(self._function("method"))
+        
+        self._consume(TokenType.RIGHT_BRACE, errorMessage = "Expect {'}'} after class body.")
+        
+        return Stmt.Class(name, methods)
     
     def _function(self, what : str) -> Stmt: #for functions and class methods
         """
@@ -292,7 +316,7 @@ class Parser(object) :
         """
             matches to one of the rules:
                 assignment -> logic_or
-                assignment -> IDENTIFIER "=" assignment
+                assignment -> (call ".")? IDENTIFIER "=" assignment
         """
         expr = self._logic_or()
         
@@ -303,6 +327,9 @@ class Parser(object) :
             try :
                 if isinstance(expr, Expr.Variable) :
                     return Expr.Assign(expr.name, value)
+                
+                elif isinstance(expr, Expr.Get) :
+                    return Expr.Set(expr.object, expr.name, value)
                     
                 raise ParseError(equals, "Invalid assignment target.")
                  
@@ -425,15 +452,20 @@ class Parser(object) :
     def _call(self) -> Expr :
         """
             matches the rule:
-                call -> primary ( "(" arguments? ")")*
+                call -> primary ( "(" arguments? ")" | "." IDENTIFIER)*
         """
         expr = self._primary()
         
         #parses an entire function call
         while True :
-            if not self._match(TokenType.LEFT_PAREN) : break;
-            else : 
+            if self._match(TokenType.LEFT_PAREN) : 
                 expr = self._finishCall(expr)
+            
+            elif self._match(TokenType.DOT) :
+                name = self._consume(TokenType.IDENTIFIER, errorMessage = "Expect property name after '.'.")
+                expr = Expr.Get(expr, name)
+            else : 
+                break    
             
         return expr
     
@@ -482,6 +514,9 @@ class Parser(object) :
             
         elif self._match(TokenType.NUMBER, TokenType.STRING) :
             return Expr.Literal(self._previous().literal)
+        
+        elif self._match(TokenType.THIS) :
+            return Expr.This(self._previous())
         
         elif self._match(TokenType.IDENTIFIER) :
             return Expr.Variable(self._previous())

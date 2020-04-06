@@ -51,7 +51,8 @@ class Binary   (Expr) :
         return str(self.left) + " " + self.operator.lexeme + " " + str(self.right)
 
 class Variable (Expr) :
-    #variable -> var <name>;
+    #variable -> var <name>; #var declaration
+    #variable -> <name> referred in some expression
     def __init__(self, name : Token) :
         self.name = name
     
@@ -77,3 +78,32 @@ class Call  (Expr) :
     def __str__(self) :
         args = ", ".join(str(arg) for arg in self.args)
         return str(self.callee) + "(" + args + ")"
+
+class This (Expr) :
+    #this -> this ("." (IDENTIFIER | Call))*
+    def __init__(self, keyword : Token) :
+         self.keyword = keyword
+    
+    def __str__(self) :
+        return "this"
+
+class Get (Expr) :
+    #get -> object.name
+    def __init__(self, obj : Expr, name : Token) :
+        self.object = obj
+        self.name = name
+       
+    def __str__(self) :
+        return str(self.object) + "." + self.name.lexeme
+
+class Set (Expr) :
+    #set -> object.name = value
+    def __init__(self, obj : Expr, name : Token, value : Expr) :
+        self.object = obj
+        self.name = name
+        self.value = value
+        
+    def __str__(self) :
+        return str(self.object) + "." + self.name.lexeme + " = " + str(self.value)
+    
+

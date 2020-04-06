@@ -1,11 +1,13 @@
 from .Token import *
-from .Lox_Exceptions import RunTimeError
+from .LoxExceptions import RunTimeError
 
 __all__ = ["Environment"]
 
 class Environment :
     __slots__ = ["_values", "_enclosing"]
     
+    #the 'enclosing' field is an enclosing environment,
+    #that is None (not defined) if it is the global scope
     def __init__(self, enclosing = None) :
         self._values = {}
         self._enclosing = enclosing
@@ -15,7 +17,7 @@ class Environment :
         self._values[name] = value
     
     def get(self, name : Token) -> object:
-        #looks up to the variable's value
+        #looks up the value of the variable 'name'
         #searches for the definition of the variable in the local scope
         if name.lexeme in self._values :
             return self._values[name.lexeme]
@@ -30,27 +32,34 @@ class Environment :
         environment = self._ancestor(distance)
         return environment._values[name]
     
-    def _ancestor(self, distance : int) :
+    def _ancestor(self, dist : int) :
+        #gets an outer scope at a 'dist' distance from the current scope
         environment = self
-        for i in range(distance) :
+        for i in range(dist) :
             environment = environment._enclosing
             
         return environment
     
     def assign(self, name : Token, value : object) -> None:
-        #assign a value to an existing variable
+        #assign a value to an existing variable,
+        #defined in the current or some enclosing scope 
         
         #assign to a local variable
         if name.lexeme in self._values :
             self._values[name.lexeme] = value; return
         
         #assign to a variable defined in an outer block
-        if self._enclosing != None : 
-            self._enclosing.assign(name, value); return
+        try : 
+            if self._enclosing != None : 
+                self._enclosing.assign(name, value); return
         
-        #not allowed to create a new variable
+        except LoxExceptions : 
+            raise
+        
+        #variable undeclared, not allowed to create a new variable
         raise RunTimeError(name, "Undefined variable '" + name.lexeme + "'.")
    
     def assignAt(self, distance : int, name : Token, value : object) -> None:
         environment = self._ancestor(distance)
-        environment._values[name.lexeme] = value; return    
+        environment._values[name.lexeme] = value; return
+         

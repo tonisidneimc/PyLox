@@ -1,0 +1,20 @@
+class Employee{
+    init(name, age, sex){
+        this.name = name;
+        this.age = age;
+        this.sex = sex;
+    }
+    sayname(){
+        print this.name;
+    }
+    sayjob(){
+        print this.job;
+    }
+}
+
+var bob = Employee("Bob", 42, "M");
+bob.job = "Manager";
+
+print bob;     //Employee instance
+bob.sayname(); //Bob
+bob.sayjob();  //Manager

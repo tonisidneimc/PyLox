@@ -7,6 +7,12 @@ class Block(Stmt) :
     #block -> "{" statements "}"
     def __init__(self, statements : list) :
         self.statements = statements
+
+class Class(Stmt) :
+    #class -> class <name> "{" function* "}"
+    def __init__(self, name : Token, methods : list) :
+        self.name = name
+        self.methods = methods
     
 class Expression(Stmt) :
     #expression -> Unary | Binary | Grouping | Literal | Logical | Variable | Assign | Call

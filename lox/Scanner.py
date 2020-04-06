@@ -1,6 +1,6 @@
 from .Token import *
 from .TokenType import *
-from .Lox_Exceptions import ScanError
+from .LoxExceptions import ScanError
 
 __all__ = ["Scanner"]
 

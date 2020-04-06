@@ -1,7 +1,7 @@
 from . import Stmt
 from . import Expr
 from .Token import *
-from .Lox_Exceptions import CompileError
+from .LoxExceptions import CompileError
 from enum import Enum
 
 __all__ = ["Resolver"]
@@ -40,7 +40,17 @@ class Stack :
         else :
             return False
 
-FunctionType = Enum("FunctionType", "NONE, FUNCTION")
+FunctionType = Enum("FunctionType", """
+        NONE, 
+        FUNCTION,
+        INITIALIZER,
+        METHOD
+""")
+
+ClassType = Enum("ClassType", """
+        NONE,
+        CLASS
+""")
    
 class Resolver :
 
@@ -49,7 +59,8 @@ class Resolver :
         self._scopes = Stack()
         self._interpreter = interpreter
         self._currentFun = FunctionType.NONE
-    
+        self._currentCls = ClassType.NONE
+        
     def _beginScope(self) -> None:
         #enters into a new scope
         self._scopes.push({})
@@ -83,6 +94,28 @@ class Resolver :
             
             self._resolveFunction(what, FunctionType.FUNCTION); return
         
+        elif isinstance(what, Stmt.Class) :
+            #name of the class is binding 
+            #in the surronding scope where the class is declared
+            
+            enclosingClass = self._currentCls
+            self._currentCls = ClassType.CLASS
+            
+            self._declare(what.name)
+            self._define(what.name)
+            
+            self._beginScope()
+            self._scopes[-1]["this"] = True
+            
+            for method in what.methods :
+                methodName = method.name.lexeme
+                self._resolveFunction(method, FunctionType.INITIALIZER if methodName == "init" 
+                                         else FunctionType.METHOD)
+
+            self._endScope(); 
+            
+            self._currentCls = enclosingClass; return
+        
         elif isinstance(what, Stmt.If) :
             #unlike Interpreter, it visit both branches
             self.resolve(what.condition)
@@ -99,11 +132,15 @@ class Resolver :
                 if self._currentFun == FunctionType.NONE :
                     #attempt to return from top-level code
                     raise CompileError(what.keyword, "Cannot return from top-level code.")
+                if self._currentFun == FunctionType.INITIALIZER :
+                    #attempt to return from an init method
+                    raise CompileError(what.keyword, "Cannot return a value from an initializer.")
+                    
             except CompileError as error :
                 self._hadError = True
                 error.what()
             else :
-                if what.value is not None :
+                if what.value is not None : 
                     self.resolve(what.value)
             return
             
@@ -138,6 +175,24 @@ class Resolver :
             for arg in what.args :
                 self.resolve(arg)
             return
+        
+        elif isinstance(what, Expr.This) :
+            try:
+                if self._currentCls == ClassType.NONE :
+                    raise CompileError(what.keyword, "Cannot use 'this' outside of a class.")
+            
+            except CompileError as error:
+                self._hadError = True
+                error.what()
+            else :
+                self._resolveLocal(what, what.keyword)
+        
+        elif isinstance(what, Expr.Get) :
+            self.resolve(what.object); return
+        
+        elif isinstance(what, Expr.Set) :
+            self.resolve(what.value)
+            self.resolve(what.object); return
         
         elif isinstance(what, Expr.Literal) :
             #there is nothing to do

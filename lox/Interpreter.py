@@ -2,12 +2,14 @@ import sys
 import time
 from .TokenType import *
 from .Token import *
-from .Lox_Exceptions import RunTimeError, ReturnException
+from .LoxExceptions import RunTimeError, ReturnException
 from . import Expr
 from . import Stmt
 from .Environment import *
 from .Callable import *
 from .LoxFunction import *
+from .LoxClass import *
+from .LoxInstance import *
 
 __all__ = ["Interpreter"]
 
@@ -65,7 +67,7 @@ class Interpreter :
         
         elif isinstance(statement, Stmt.Function) :
             #defines a function in the current environment
-            function = LoxFunction(statement, self._environment)
+            function = LoxFunction(statement, self._environment, False)
             self._environment.define(statement.name.lexeme, function); return
         
         elif isinstance(statement, Stmt.If) :
@@ -95,7 +97,18 @@ class Interpreter :
             #define this variable in the current environment
             value = None if statement.initializer is None else self._evaluate(statement.initializer)
             self._environment.define(statement.name.lexeme, value); return
-    
+        
+        elif isinstance(statement, Stmt.Class) :
+            self._environment.define(statement.name.lexeme, None)
+            
+            methods = {}
+            for method in statement.methods :
+                methodName = method.name.lexeme
+                methods[methodName] = LoxFunction(method, self._environment, True if methodName == "init" else False)
+            
+            klass = LoxClass(statement.name.lexeme, methods)
+            self._environment.assign(statement.name, klass)
+            
     def executeBlock(self, block : Stmt.Block, environment : Environment) :
         #enter into a new block of code/scope
         
@@ -108,6 +121,8 @@ class Interpreter :
             for stmt in block.statements :
                 self._execute(stmt) #execute block's statements
         
+        except Exception:
+            raise
         finally :
             #restores the current scope
             self._environment = previous
@@ -153,10 +168,19 @@ class Interpreter :
             value = self._evaluate(expr.value)
             
             try : 
+                #get resolved scope of this variable
                 distance = self._locals[expr]
             except KeyError :
-                self.globals.assign(expr.name, value)
+                #it is not in locals
+                #assume it is in global scope
+                try :
+                    self.globals.assign(expr.name, value)
+                except RunTimeError as error :
+                    #it is not in globals
+                    #tried to assign to an undefined variable
+                    error.what()
             else :
+                #assign to the resolved variable
                 self._environment.assignAt(distance, expr.name, value)
             
             finally :
@@ -176,6 +200,27 @@ class Interpreter :
                 raise RunTimeError(expr.paren, f"Expected {function.arity()} arguments, but got {len(args)}.")
             
             return function.call(self, args) #calls the function with their specific arguments
+        
+        elif isinstance(expr, Expr.This) :
+            return self._findVariable(expr.keyword, expr)
+        
+        elif isinstance(expr, Expr.Get) :
+            obj = self._evaluate(expr.object)
+            
+            if isinstance(obj, LoxInstance) :
+                return obj.get(expr.name)
+            
+            raise RunTimeError(expr.name, "Only instances have properties.")
+        
+        elif isinstance(expr, Expr.Set) :
+            obj = self._evaluate(expr.object)
+            
+            if not isinstance(obj, LoxInstance) :
+                raise RunTimeError(expr.name, "Only instances have fields.")
+            
+            value = self._evaluate(expr.value)
+            obj.set(expr.name, value)
+            return value
             
         elif isinstance(expr, Expr.Grouping) :
             #recursively evaluates the grouping subexpression, and returns the result
@@ -277,7 +322,7 @@ class Interpreter :
         elif isinstance(obj, float) :
             text = str(obj)
             #discards zeroed mantissa
-            return (text[:-2] if text[-2:] == ".0" else text)       
+            return (text[:-2] if text[-2:] == ".0" else text)
         
         elif obj == True : return "true"
         
