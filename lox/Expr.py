@@ -87,6 +87,15 @@ class This (Expr) :
     def __str__(self) :
         return "this"
 
+class Super (Expr) :
+    #super -> super "." IDENTIFIER
+    def __init__(self, keyword : Token, method : Token) :
+        self.keyword = keyword
+        self.method = method
+    
+    def __str__(self) :
+        return "super." + self.method.lexeme;
+
 class Get (Expr) :
     #get -> object.name
     def __init__(self, obj : Expr, name : Token) :

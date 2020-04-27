@@ -5,7 +5,8 @@ from .LoxFunction import *
 __all__ = ["LoxClass"]
 
 class LoxClass(Callable) :
-    def __init__(self, name : str, methods : dict) :
+    def __init__(self, name : str, superclass, methods : dict) :
+        self._supercls = superclass
         self._name = name 
         self._methods = methods
     
@@ -22,9 +23,14 @@ class LoxClass(Callable) :
         return instance
     
     def findMethod(self, methodName : str) -> LoxFunction:
-        #tries to find a method defined inside the current class
-        return (self._methods[methodName] if methodName in self._methods else None)
-    
+        #tries to find a method defined inside the current class or in superclass
+        if methodName in self._methods : 
+            return self._methods[methodName]
+        elif self._supercls is not None :
+            return self._supercls.findMethod(methodName)
+        
+        else : return None
+        
     def arity(self) -> int:
         #returns the arity of the constructor
         initializer = self.findMethod("init")

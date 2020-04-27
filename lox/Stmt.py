@@ -10,8 +10,9 @@ class Block(Stmt) :
 
 class Class(Stmt) :
     #class -> class <name> "{" function* "}"
-    def __init__(self, name : Token, methods : list) :
+    def __init__(self, name : Token, superclass : Expr.Variable, methods : list) :
         self.name = name
+        self.supercls = superclass
         self.methods = methods
     
 class Expression(Stmt) :

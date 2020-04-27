@@ -69,9 +69,15 @@ class Parser(object) :
     def _class(self) -> Stmt:
         """
             matches the rule :
-                class -> IDENTIFIER "{" function* "}"
+                class -> IDENTIFIER ("<" IDENTIFIER)? "{" function* "}"
         """
         name = self._consume(TokenType.IDENTIFIER, errorMessage = "Expect class name.")
+        
+        supercls = None
+        if self._match(TokenType.LESS) :
+            self._consume(TokenType.IDENTIFIER, errorMessage = "Expect superclass name.")
+            supercls = Expr.Variable(self._previous())
+        
         self._consume(TokenType.LEFT_BRACE, errorMessage = "Expect '{'{'}' before class body.")
         
         methods = []
@@ -80,7 +86,7 @@ class Parser(object) :
         
         self._consume(TokenType.RIGHT_BRACE, errorMessage = "Expect {'}'} after class body.")
         
-        return Stmt.Class(name, methods)
+        return Stmt.Class(name, supercls, methods)
     
     def _function(self, what : str) -> Stmt: #for functions and class methods
         """
@@ -502,6 +508,7 @@ class Parser(object) :
                 primary -> "nil"
                 primary -> IDENTIFIER
                 primary -> "(" expression ")"
+                primary -> "super" "." IDENTIFIER
         """
         if self._match(TokenType.FALSE) :
             return Expr.Literal(False)
@@ -529,7 +536,17 @@ class Parser(object) :
                 raise
             else :
                 return Expr.Grouping(expr)
-                
+        
+        elif self._match(TokenType.SUPER) :
+            keyword = self._previous()
+            try :
+                self._consume(TokenType.DOT, errorMessage = "Expect '.' after 'super'.")
+                method = self._consume(TokenType.IDENTIFIER, errorMessage = "Expect superclass method name.")
+            except ParseError :
+                raise #
+            else :
+                return Expr.Super(keyword, method)
+                        
         else : 
             raise ParseError(self._peek(), "Expected expression.")    
     

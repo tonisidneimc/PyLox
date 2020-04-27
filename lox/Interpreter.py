@@ -99,14 +99,28 @@ class Interpreter :
             self._environment.define(statement.name.lexeme, value); return
         
         elif isinstance(statement, Stmt.Class) :
+            
+            if statement.supercls is not None :
+                supercls = self._evaluate(statement.supercls)
+                if not isinstance(supercls, LoxClass) : 
+                    raise RunTimeError(statement.supercls.name, f"Superclass of '{statement.name.lexeme}' must be a class.")
+            else : supercls = None
+            
             self._environment.define(statement.name.lexeme, None)
+            
+            if supercls is not None :
+                self._environment = Environment(self._environment)
+                self._environment.define("super", supercls)
             
             methods = {}
             for method in statement.methods :
                 methodName = method.name.lexeme
                 methods[methodName] = LoxFunction(method, self._environment, True if methodName == "init" else False)
             
-            klass = LoxClass(statement.name.lexeme, methods)
+            klass = LoxClass(statement.name.lexeme, supercls, methods)
+            if supercls is not None : 
+                self._environment = self._environment.enclosing
+                
             self._environment.assign(statement.name, klass)
             
     def executeBlock(self, block : Stmt.Block, environment : Environment) :
@@ -203,6 +217,18 @@ class Interpreter :
         
         elif isinstance(expr, Expr.This) :
             return self._findVariable(expr.keyword, expr)
+        
+        elif isinstance(expr, Expr.Super) :
+            dist = self._locals[expr]
+            superclass = self._environment.getAt(dist, "super") #where superclass is defined
+            #"this" is always bound right inside the environment in which "super" is stored
+            thisObject = self._environment.getAt(dist - 1, "this")
+            
+            method = superclass.findMethod(expr.method.lexeme)
+            if method is None :
+                raise RunTimeError(expr.method, f"Undefined property '{expr.name.lexeme}'.")
+                
+            return method.bind(thisObject)
         
         elif isinstance(expr, Expr.Get) :
             obj = self._evaluate(expr.object)

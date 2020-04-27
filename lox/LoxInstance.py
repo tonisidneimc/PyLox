@@ -13,12 +13,13 @@ class LoxInstance :
         if name.lexeme in self._fields :
             #returns an attribute's state
             return self._fields[name.lexeme]
-            
-        elif name.lexeme in self._klass._methods :
-            #returns a method
-            return self._klass.findMethod(name.lexeme).bind(self)
         
-        else : raise RunTimeError(name, f"Undefined property '{name.lexeme}'.")
+        method = self._klass.findMethod(name.lexeme)
+        if method is not None :
+            #returns a method
+            return method.bind(self)    
+        
+        raise RunTimeError(name, f"Undefined property '{name.lexeme}'.")
     
     def set(self, name : Token, value : object) :
         #defines the state/value of an instance attribute

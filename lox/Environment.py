@@ -4,13 +4,13 @@ from .LoxExceptions import RunTimeError
 __all__ = ["Environment"]
 
 class Environment :
-    __slots__ = ["_values", "_enclosing"]
+    __slots__ = ["_values", "enclosing"]
     
     #the 'enclosing' field is an enclosing environment,
     #that is None (not defined) if it is the global scope
     def __init__(self, enclosing = None) :
         self._values = {}
-        self._enclosing = enclosing
+        self.enclosing = enclosing
     
     def define(self, name : str, value : object) -> None:
         #binds a new name to a value
@@ -23,8 +23,8 @@ class Environment :
             return self._values[name.lexeme]
         
         #searches for the definition of the variable in the outer blocks 
-        if self._enclosing != None : 
-            return self._enclosing.get(name)
+        if self.enclosing != None : 
+            return self.enclosing.get(name)
             
         raise RunTimeError(name, "Undefined variable '" + name.lexeme + "'.")
     
@@ -36,7 +36,7 @@ class Environment :
         #gets an outer scope at a 'dist' distance from the current scope
         environment = self
         for i in range(dist) :
-            environment = environment._enclosing
+            environment = environment.enclosing
             
         return environment
     
@@ -50,8 +50,8 @@ class Environment :
         
         #assign to a variable defined in an outer block
         try : 
-            if self._enclosing != None : 
-                self._enclosing.assign(name, value); return
+            if self.enclosing != None : 
+                self.enclosing.assign(name, value); return
         
         except LoxExceptions : 
             raise

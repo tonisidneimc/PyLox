@@ -49,7 +49,8 @@ FunctionType = Enum("FunctionType", """
 
 ClassType = Enum("ClassType", """
         NONE,
-        CLASS
+        CLASS,
+        SUBCLASS
 """)
    
 class Resolver :
@@ -104,7 +105,19 @@ class Resolver :
             self._declare(what.name)
             self._define(what.name)
             
-            self._beginScope()
+            try :
+                if what.supercls and what.name.lexeme == what.supercls.name.lexeme :
+                    raise CompileError(what.name, "A class cannot inherit from itself.")
+            except CompileError as error :
+                error.what()     
+            
+            if what.supercls is not None :
+                self._currentCls = ClassType.SUBCLASS #allows references to "super"
+                self.resolve(what.supercls)
+                self._beginScope() #begin a scope to define "super"
+                self._scopes[-1]["super"] = True
+            
+            self._beginScope() #begin a scope to define "this"
             self._scopes[-1]["this"] = True
             
             for method in what.methods :
@@ -112,8 +125,10 @@ class Resolver :
                 self._resolveFunction(method, FunctionType.INITIALIZER if methodName == "init" 
                                          else FunctionType.METHOD)
 
-            self._endScope(); 
-            
+            self._endScope(); #pop scope where "this" is defined
+            if what.supercls is not None :
+                self._endScope() #pop scope where the superclass is defined
+                
             self._currentCls = enclosingClass; return
         
         elif isinstance(what, Stmt.If) :
@@ -186,6 +201,19 @@ class Resolver :
                 error.what()
             else :
                 self._resolveLocal(what, what.keyword)
+        
+        elif isinstance(what, Expr.Super) :
+            try :
+                if self._currentCls == ClassType.NONE :
+                    raise CompileError(what.keyword, "Cannot use 'super' outside of a class.")
+                elif self._currentCls != ClassType.SUBCLASS :
+                    raise CompileError(what.keyword, "Cannot use 'super' in a class with no superclass.")
+                        
+            except CompileError as error :
+                self._hadError = True
+                error.what()
+            else :
+                self._resolveLocal(what, what.keyword); return
         
         elif isinstance(what, Expr.Get) :
             self.resolve(what.object); return

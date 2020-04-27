@@ -1,8 +1,17 @@
-class Employee{
+
+class Person{
     init(name, age, sex){
         this.name = name;
         this.age = age;
         this.sex = sex;
+    }
+}
+
+class Employee < Person{
+    init(name, age, sex, job, salary){
+        super.init(name, age, sex);
+        this.job = job;
+        this.salary = salary;
     }
     sayname(){
         print this.name;
@@ -12,8 +21,8 @@ class Employee{
     }
 }
 
-var bob = Employee("Bob", 42, "M");
-bob.job = "Manager";
+var bob = Employee("Bob", 42, "M", "Manager", 5000.00);
+//bob.job = "Manager";
 
 print bob;     //Employee instance
 bob.sayname(); //Bob

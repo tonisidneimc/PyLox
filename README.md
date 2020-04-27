@@ -23,8 +23,8 @@ Or to interpret a script located in a *__.lox__* file, provide the full path to 
 ```
 $ python3 PyLox.py <file path>
 ```
-You can try to run the example.lox file in this project, by typing:
+You can try to run the example1.lox file in this project, by typing:
 ```
-$ python3 PyLox.py example.lox
+$ python3 PyLox.py examples/example1.lox
 ```
-Here, the example.lox file is in the same directory as PyLox, so we don't need to specify its location.
+

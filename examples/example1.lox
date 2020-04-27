@@ -36,15 +36,17 @@ fun fibonacci_2(n){
     }
 }
 
+print "time spent calculating the nth term of fibonacci";
+
 var start = clock();
 fibonacci_1(8);
 var end = clock();
-print "time spent calculating the nth term of fibonacci iteratively:";
+print "iteratively:";
 print end - start;
 
 var start = clock();
 fibonacci_2(8);
 var end = clock();
-print "time spent calculating the nth term of fibonacci recursively:";
+print "recursively:";
 print end - start;
 
