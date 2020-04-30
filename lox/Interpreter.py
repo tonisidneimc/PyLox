@@ -2,7 +2,8 @@ import sys
 import time
 from .TokenType import *
 from .Token import *
-from .LoxExceptions import RunTimeError, ReturnException
+from .LoxExceptions import LoxRuntimeError
+from .LoxExceptions import ReturnException
 from . import Expr
 from . import Stmt
 from .Environment import *
@@ -14,27 +15,26 @@ from .LoxInstance import *
 __all__ = ["Interpreter"]
 
 """
-    This module provides the Interpreter class, with some methods, 
-    to evaluate each statement that composes the program, producing user-visible output 
-    or modifying some state in the interpreter that can be detected later.
+    The Interpreter evaluates directly each statement that composes the program, 
+    producing user-visible output or modifying some state in the interpreter that can be detected later.
 """
 
 class Interpreter :
 
-    def __init__(self) :
+    def __init__(self, isPromptSession : bool = False) :
+        self.isPromptSession = isPromptSession
         self._hadError = False
         self.globals = Environment() #global scope
-        self._environment = self.globals
-        self._locals = {}
+        self._environment = self.globals #the current scope is the global scope
+        self._locals = {} #define all variables referenced at local scopes
         
         # native/built-in functions definition
         
         class Clock(Callable) :
             def arity(self) : return 0;
             def call(self, interpreter, arguments : list = []) : 
-                """Using built-in python function clock. According to its documentation, 'it returns the CPU time 
-                   or real time since the start of the process or since the first call to clock().  
-                   This has as much precision as the system records.'
+                """The built-in python function clock returns the CPU time or real time 
+                   since the start of the process or since the first call to clock().
                 """
                 return time.clock()
             def __str__(self) :
@@ -43,35 +43,45 @@ class Interpreter :
         self.globals.define("clock", Clock())
         
     def Interpret(self, statements : list) -> None:
-        """
-            interpret each Statement Syntax Tree from a parsed list of statements,
-            (see Parser's documentation), evaluating and executing it.
-        """
+        #interpret each Statement Syntax in a list of statements
+        
         try :
             for statement in statements :
                 self._execute(statement)
             
-        except RunTimeError as error :
+        except LoxRuntimeError as error :
             self._hadError = True
             error.what()
     
     def _execute(self, statement : Stmt) -> None:
         #executes a statement
         if isinstance(statement, Stmt.Block) :
-            #enters into a new nested scope
+            #creates and enters into a new nested scope
             self.executeBlock(statement, Environment(self._environment)); return
         
         elif isinstance(statement, Stmt.Expression) :
             #evaluates this expression
-            self._evaluate(statement.expression); return
-        
+            temp = self._evaluate(statement.expression)
+            if self.isPromptSession : 
+                toEcho = {
+                    Expr.Call,
+                    Expr.Variable,
+                    Expr.Unary, Expr.Binary, Expr.Grouping,
+                    Expr.Logical, Expr.Literal,
+                    Expr.Get
+                }
+                if type(statement.expression) in toEcho :
+                    print(self._stringify(temp)); return #echoes to the prompt
+                
+            else : return
+            
         elif isinstance(statement, Stmt.Function) :
-            #defines a function in the current environment
+            #defines a function in the current scope
             function = LoxFunction(statement, self._environment, False)
             self._environment.define(statement.name.lexeme, function); return
         
         elif isinstance(statement, Stmt.If) :
-            #execute the if then/else statement
+            #execute the 'if then/else' statement
             if self._isTruth(self._evaluate(statement.condition)) :
                 self._execute(statement.thenBranch)
             elif statement.elseBranch is not None :
@@ -79,14 +89,16 @@ class Interpreter :
             return
         
         elif isinstance(statement, Stmt.While) :
-            #execute the while statement
+            #execute the 'while' statement
             while self._isTruth(self._evaluate(statement.condition)) :
                 self._execute(statement.body)
             return
         
         elif isinstance(statement, Stmt.Return) :
+            #executes the instruction to return a value for a given method or function
+            #nil is the default return value
             value = None if statement.value is None else self._evaluate(statement.value)
-            raise ReturnException(value) #returns value
+            raise ReturnException(value)
                         
         elif isinstance(statement, Stmt.Print) :
             #evaluates and print this expression
@@ -99,24 +111,28 @@ class Interpreter :
             self._environment.define(statement.name.lexeme, value); return
         
         elif isinstance(statement, Stmt.Class) :
+            #interprets the class declaration statement
             
+            #evaluates the superclass if it is defined
             if statement.supercls is not None :
                 supercls = self._evaluate(statement.supercls)
                 if not isinstance(supercls, LoxClass) : 
-                    raise RunTimeError(statement.supercls.name, f"Superclass of '{statement.name.lexeme}' must be a class.")
+                    raise LoxRuntimeError(statement.supercls.name, 
+                                "Superclass of '{}' must be a class.".format(statement.name.lexeme))
             else : supercls = None
             
+            #define current class to allow references inside methods
             self._environment.define(statement.name.lexeme, None)
             
             if supercls is not None :
                 self._environment = Environment(self._environment)
-                self._environment.define("super", supercls)
+                self._environment.define("super", supercls) #super is defined in the class scope
             
             methods = {}
             for method in statement.methods :
                 methodName = method.name.lexeme
-                methods[methodName] = LoxFunction(method, self._environment, True if methodName == "init" else False)
-            
+                methods[methodName] = LoxFunction(method, self._environment, isInitializer = True if methodName == "init" 
+                                                                                                  else False)
             klass = LoxClass(statement.name.lexeme, supercls, methods)
             if supercls is not None : 
                 self._environment = self._environment.enclosing
@@ -124,16 +140,17 @@ class Interpreter :
             self._environment.assign(statement.name, klass)
             
     def executeBlock(self, block : Stmt.Block, environment : Environment) :
-        #enter into a new block of code/scope
+        #executes the block statement that defines a new nested scope
         
-        previous = self._environment #the current scope
+        previous = self._environment #saves the current scope
         try :
             #enters into a new scope
             #allows to assign, define and access variables in the inner scope
             self._environment = environment
             
+            #executes the statements that are in the block
             for stmt in block.statements :
-                self._execute(stmt) #execute block's statements
+                self._execute(stmt) 
         
         except Exception:
             raise
@@ -160,21 +177,21 @@ class Interpreter :
             return expr.value
         
         elif isinstance(expr, Expr.Logical) :
-            #returns the true value of the expression
+            #returns the truth value of the expression
             left = self._evaluate(expr.left)
-            #tries to short-circuit : if after evaluating the left operand, 
+            #try to short-circuit : if after evaluating the left operand,
             #the result of the logical expression is known, do not evaluate the right operand
             if expr.operator.tokenValue == TokenType.OR :
-                if self._isTruth(left): #true or anything else is true 
+                if self._isTruth(left): #true OR anything else is true
                     return left
             elif expr.operator.tokenValue == TokenType.AND :
-                if not self._isTruth(left): #false and anything else is false
+                if not self._isTruth(left): #false AND anything else is false
                     return left
             
             return self._evaluate(expr.right) #left operand only is logically inconclusive, so it evaluates the right
         
         elif isinstance(expr, Expr.Variable) :
-            #returns the variable's state/value    
+            #returns the state or value of the variable
             return self._findVariable(expr.name, expr)
         
         elif isinstance(expr, Expr.Assign) :
@@ -182,20 +199,23 @@ class Interpreter :
             value = self._evaluate(expr.value)
             
             try : 
-                #get resolved scope of this variable
-                distance = self._locals[expr]
+                #get the resolved scope of this variable
+                dist = self._locals[expr]
             except KeyError :
-                #it is not in locals
-                #assume it is in global scope
+                #it is not in some local scope
+                #assume that it is in the global scope
                 try :
                     self.globals.assign(expr.name, value)
-                except RunTimeError as error :
-                    #it is not in globals
-                    #tried to assign to an undefined variable
+                except LoxRuntimeError as error :
+                    #it is not in the global scope
+                    #attempt to assign to an undefined variable
+                    self._hadError = True
                     error.what()
             else :
+                #found in some local scope
+                #it was defined at a distance 'dist' from the current scope
                 #assign to the resolved variable
-                self._environment.assignAt(distance, expr.name, value)
+                self._environment.assignAt(dist, expr.name, value)
             
             finally :
                 return value #allows cascading values
@@ -206,27 +226,28 @@ class Interpreter :
             args = [self._evaluate(arg) for arg in expr.args]
             
             if not isinstance(callee, Callable) : #check if it evaluates to a callable defined function
-                raise RunTimeError(expr.paren, "Only calls to functions and classes are allowed.")
+                raise LoxRuntimeError(expr.paren, "Can only call functions and classes.")
             
             function = callee
             
             if len(args) != function.arity() : 
-                raise RunTimeError(expr.paren, f"Expected {function.arity()} arguments, but got {len(args)}.")
+                raise LoxRuntimeError(expr.paren, "Expect {} arguments, but got {}.".format(function.arity(), len(args)))
             
             return function.call(self, args) #calls the function with their specific arguments
         
         elif isinstance(expr, Expr.This) :
+            #'this' refers to a class instance 
             return self._findVariable(expr.keyword, expr)
         
         elif isinstance(expr, Expr.Super) :
             dist = self._locals[expr]
-            superclass = self._environment.getAt(dist, "super") #where superclass is defined
-            #"this" is always bound right inside the environment in which "super" is stored
+            superclass = self._environment.getAt(dist, "super") #where the superclass is defined
+            #'this' is always bound right inside the environment in which 'super' is stored
             thisObject = self._environment.getAt(dist - 1, "this")
             
             method = superclass.findMethod(expr.method.lexeme)
             if method is None :
-                raise RunTimeError(expr.method, f"Undefined property '{expr.name.lexeme}'.")
+                raise LoxRuntimeError(expr.method, "Undefined property '{}'.".format(expr.name.lexeme))
                 
             return method.bind(thisObject)
         
@@ -236,13 +257,13 @@ class Interpreter :
             if isinstance(obj, LoxInstance) :
                 return obj.get(expr.name)
             
-            raise RunTimeError(expr.name, "Only instances have properties.")
+            else : raise LoxRuntimeError(expr.name, "Only instances have properties.")
         
         elif isinstance(expr, Expr.Set) :
             obj = self._evaluate(expr.object)
             
             if not isinstance(obj, LoxInstance) :
-                raise RunTimeError(expr.name, "Only instances have fields.")
+                raise LoxRuntimeError(expr.name, "Only instances have fields.")
             
             value = self._evaluate(expr.value)
             obj.set(expr.name, value)
@@ -263,7 +284,7 @@ class Interpreter :
             elif expr.operator.tokenValue == TokenType.BANG :
                 return not(self._isTruth(right))
             
-            return None #will not be reached
+            else : return None #will not be reached
         
         elif isinstance(expr, Expr.Binary) :
             #recursively evaluates left and right operands and apply operation as: left <operator> right 
@@ -271,12 +292,12 @@ class Interpreter :
             left = self._evaluate(expr.left)
             right = self._evaluate(expr.right)
             
-            SkipOperandsVerification = [TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL, TokenType.PLUS]
+            skipOperandsVerification = {TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL, TokenType.PLUS}
             
-            if  expr.operator.tokenValue not in SkipOperandsVerification:
+            if expr.operator.tokenValue not in skipOperandsVerification:
                 self._checkNumberOperands(expr.operator, left, right)
             
-            operations = {
+            _operations = {
                 TokenType.GREATER       : (lambda : float(left) > float(right)),
                 TokenType.GREATER_EQUAL : (lambda : float(left) >= float(right)),
                 TokenType.LESS          : (lambda : float(left) < float(right)),
@@ -285,10 +306,10 @@ class Interpreter :
                 TokenType.BANG_EQUAL    : (lambda : not(self._isEqual(left, right))),
                 TokenType.MINUS         : (lambda : float(left) - float(right)),
                 TokenType.STAR          : (lambda : float(left) * float(right)),
-                TokenType.SLASH         : (lambda : self._division_operation(expr.operator, left, right)),
-                TokenType.PLUS          : (lambda : self._add_or_concat(expr.operator, left, right))
+                TokenType.SLASH         : (lambda : self._division(expr.operator, left, right)),
+                TokenType.PLUS          : (lambda : self._addOrConcatenate(expr.operator, left, right))
             }
-            return operations[expr.operator.tokenValue]()
+            return _operations[expr.operator.tokenValue]()
             
     
     def _checkNumberOperands(self, operator : Token, *operands : object) -> None:
@@ -296,20 +317,20 @@ class Interpreter :
         
         for operand in operands :
             if not isinstance(operand, float) :
-                raise RunTimeError(operator, "All operands must be numbers.")
+                raise LoxRuntimeError(operator, "All operands must be numbers.")
         return
     
-    def _division_operation(self, operator : Token, left : object, right : object) -> float:
+    def _division(self, operator : Token, left : object, right : object) -> float:
         #implements the logic of the division operation, where the zeroed denominator is not allowed
         
         try :
             quocient =  float(left) / float(right)
         except ZeroDivisionError :
-            raise RunTimeError(operator, "Attempted to divide by zero.")
+            raise LoxRuntimeError(operator, "Attempted to divide by zero.")
         else :
             return quocient        
             
-    def _add_or_concat(self, operator : Token, left : object, right : object) -> object:
+    def _addOrConcatenate(self, operator : Token, left : object, right : object) -> object:
         #implements logic for the PLUS (+) operator
         if isinstance(left, float) and isinstance(right, float) :
             #adds two numbers as <float> + <float>
@@ -320,7 +341,7 @@ class Interpreter :
             return str(left) + str(right)
         
         else :
-            raise RunTimeError(operator, "Operands must be two numbers or two strings.")
+            raise LoxRuntimeError(operator, "Operands must be two numbers or two strings.")
     
     def _isTruth(self, obj : object) -> bool:
           #matches the Lox truth rule, where false and nil are False and everything else is True
@@ -336,6 +357,9 @@ class Interpreter :
             return True
         if left == None :
             #None is only equal to None
+            return False
+        
+        if type(left) != type(right) :
             return False
         
         return left == right

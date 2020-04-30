@@ -6,17 +6,19 @@
 
 fun f(){
     var i = 0;
-    fun counter(){
+    fun counter(){ //the function saves its surrounding scope environment
         i = i + 1;
         //i is defined in an extern scope,
         //but can be accessed at runtime here
         print i;
     }
+    //returns the function
     return counter;
 }
 
 var count = f();
 
 for(var i = 0; i < 10; i = i + 1){
+    //it's like yield in python
     count();
 }

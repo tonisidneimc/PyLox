@@ -1,13 +1,13 @@
 from .Token import *
 from .TokenType import *
-from .LoxExceptions import ScanError
+from .LoxExceptions import LoxScanError
 
 __all__ = ["Scanner"]
 
 """
-    This module provides the Scanner class with some methods,  
-    to process and break a buffer of characters 
-    into multiple tokens, to be processed by the Parser later
+    The Scanner performs the Lexical Analysis of a text. 
+    The character buffer is read and divided into tokens, 
+    each corresponding to a symbol in the Lox language.
 """
 
 class Scanner(object) :
@@ -43,28 +43,30 @@ class Scanner(object) :
     def Tokenize(self) -> list:
         #breaks the character buffer into a list of tokens
         
-        while not self._isAtEnd() :
-            try :
-                self._start = self._current
+        try :
+            while not self._isAtEnd() :
                 self._scanToken()
-            except ScanError as error :
-                self._hadError = True
-                error.what()
-                
-        self._start = self._current        
-        self._addToken(TokenType.EOF)
         
-        return self._tokens
+        except LoxScanError as error :
+            self._hadError = True
+            error.what()        
+        else :
+            self._start = self._current        
+            self._addToken(TokenType.EOF)
+        
+            return self._tokens
         
     def _scanToken(self) -> None:
-        char = self._advance()
+        self._skipWhiteSpaces() #ignore white space characters
         
-        lexeme_to_token = {
+        if self._isAtEnd() : return
+        self._start = self._current
         
-            " "  : (lambda : None),
-            "\r" : (lambda : None),
-            "\t" : (lambda : None),
-            "\n" : (lambda : self._increment_line()),
+        #increments _current and returns last consumed token
+        character = self._advance()
+        
+        LexemeToToken = {
+            '"'  : (lambda : self._string()),
             "("  : (lambda : self._addToken(TokenType.LEFT_PAREN)),
             ")"  : (lambda : self._addToken(TokenType.RIGHT_PAREN)),
             "{"  : (lambda : self._addToken(TokenType.LEFT_BRACE)),
@@ -75,32 +77,32 @@ class Scanner(object) :
             "-"  : (lambda : self._addToken(TokenType.MINUS)),
             "+"  : (lambda : self._addToken(TokenType.PLUS)),
             "*"  : (lambda : self._addToken(TokenType.STAR)),
-            "/"  : (lambda : self._skipSpaces() if self._match("/", "*") else self._addToken(TokenType.SLASH)),
-            "!"  : (lambda : self._addToken(TokenType.BANG_EQUAL if self._match("=") else TokenType.BANG)),
-            "="  : (lambda : self._addToken(TokenType.EQUAL_EQUAL if self._match("=") else TokenType.EQUAL)),
-            "<"  : (lambda : self._addToken(TokenType.LESS_EQUAL if self._match("=") else TokenType.LESS)),
-            ">"  : (lambda : self._addToken(TokenType.GREATER_EQUAL if self._match("=") else TokenType.GREATER)),
-            '"'  : (lambda : self._string())
+            "/"  : (lambda : self._addToken(TokenType.SLASH) if not self._matchAny("/", "*") else self._finishComment()),
+            "!"  : (lambda : self._addToken(TokenType.BANG_EQUAL if self._matchAny("=") else TokenType.BANG)),
+            "="  : (lambda : self._addToken(TokenType.EQUAL_EQUAL if self._matchAny("=") else TokenType.EQUAL)),
+            "<"  : (lambda : self._addToken(TokenType.LESS_EQUAL if self._matchAny("=") else TokenType.LESS)),
+            ">"  : (lambda : self._addToken(TokenType.GREATER_EQUAL if self._matchAny("=") else TokenType.GREATER))
         }
         
-        if char in lexeme_to_token : 
-            return lexeme_to_token[char]()
+        if character in LexemeToToken : 
+            return LexemeToToken[character]()
         
-        elif str.isdigit(char) : 
+        elif str.isdigit(character) : 
             return self._number()
         
-        elif self._isalphanum(char) : 
+        elif self._isalphanum(character) : 
             return self._identifier()
         
         else : 
-            raise ScanError(self._line, f"Unexpected character '{char}'")
-    
+            raise LoxScanError(self._line, "Unexpected character '{}'".format(character))
+            raise LoxScanError(self._line, "Unexpected character '{}'".format(char))
+            
     
     def _addToken(self, token : TokenType, literal : object = None) -> None :
         #creates a token, with lexeme at _source from _start until _current - 1
 
-        text = self._source[self._start : self._current]
-        self._tokens.append(Token(token, text, literal, self._line))
+        lexeme = self._source[self._start : self._current]
+        self._tokens.append(Token(token, lexeme, literal, self._line))
     
     
     def _string(self) -> None: 
@@ -109,7 +111,7 @@ class Scanner(object) :
             self._advance()
             
         if self._isAtEnd() :
-            raise ScanError(self._line, "Unterminated String.")
+            raise LoxScanError(self._line, "Unterminated String.")
         else :
             self._advance()
             value = self._source[self._start + 1 : self._current - 1]
@@ -126,7 +128,6 @@ class Scanner(object) :
         
         self._addToken(TokenType.NUMBER, float(self._source[self._start : self._current]))
     
-    
     def _isalphanum(self, char : str) -> bool:
         #checks if char is a valid alphanumeric character
         return str.isalnum(char) or char == "_"
@@ -142,20 +143,19 @@ class Scanner(object) :
             
         else : self._addToken(Scanner._keywords[text])
      
-     
     def _isAtEnd(self) -> bool:
         #checks if there is any character still to be processed from the buffer
         return self._current >= len(self._source)
     
-    def _increment_line(self) -> None:
+    def _incrementLine(self) -> None:
         self._line += 1
     
     def _advance(self, offset : int = 1) -> str:
         #advances the _current pointer in the character buffer
+        if self._isAtEnd() : return ""
         
         self._current += offset
         return self._source[self._current - offset]
-    
     
     def _peek(self) -> str:
         #get _current character in the buffer
@@ -164,14 +164,12 @@ class Scanner(object) :
         else : 
             return self._source[self._current]
         
-        
     def _peekNext(self) -> str:
         #get next character after _current in the buffer
         
         if self._current + 1 >= len(self._source) : return "\0"
         else : 
             return self._source[self._current + 1]
-    
     
     def _previous(self) -> str:
         #get the first character before _current, in the buffer
@@ -180,9 +178,9 @@ class Scanner(object) :
         else : 
             return self._source[self._current - 1]     
     
-    
-    def _match(self, *expected : tuple) -> bool :
-        #checks and consumes the _current character, if it matches any of the expected characters
+    def _matchAny(self, *expected : tuple) -> bool :
+        #checks and consumes the _current character, 
+        #if it matches any of the expected characters
         
         if self._isAtEnd() : return False
         
@@ -193,19 +191,38 @@ class Scanner(object) :
         
         return False
         
-    def _skipSpaces(self) -> None :
+    def _finishComment(self) -> None :
         #consumes characters from the buffer until the comment ends
+        c = self._previous()
         
-        if(self._previous() == "/") : #single-line comments
+        if c == "/" : #single-line comments
             while self._peek() != "\n" and not self._isAtEnd() :
                 self._advance()            
         
-        elif(self._previous() == "*") : #multi-line comments
+        elif c == "*" : #multi-line comments
             while not self._isAtEnd() :
-                if (self._peek() == "*" and self._peekNext() == "/") :
+                if self._peek() == "*" and self._peekNext() == "/" :
                     self._advance(2)
                     break;
-                else : self._advance()
-            
+                else :
+                    if self._peek() == "\n" : 
+                        self._incrementLine()
+                    self._advance()
             else :
-                raise ScanError(self._line, "Unterminated Comment.")
+                raise LoxScanError(self._line, "Unterminated Comment.")
+        
+        else : return
+            
+    def _skipWhiteSpaces(self) -> None :
+    
+        while not self._isAtEnd() :
+            c = self._peek()
+            
+            if c not in {" ", "\n", "\r", "\t"} : 
+                break
+                
+            if c == "\n" : 
+                self._incrementLine() 
+            
+            self._advance()
+            

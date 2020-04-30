@@ -13,17 +13,16 @@ class Employee < Person{
         this.job = job;
         this.salary = salary;
     }
-    sayname(){
+    sayName(){
         print this.name;
     }
-    sayjob(){
+    sayJob(){
         print this.job;
     }
 }
 
 var bob = Employee("Bob", 42, "M", "Manager", 5000.00);
-//bob.job = "Manager";
 
 print bob;     //Employee instance
-bob.sayname(); //Bob
-bob.sayjob();  //Manager
+bob.sayName(); //Bob
+bob.sayJob();  //Manager

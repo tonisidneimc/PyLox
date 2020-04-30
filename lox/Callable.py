@@ -1,9 +1,9 @@
-from abc import ABC as Abstract_Class
+from abc import ABC as AbstractClass
 from abc import abstractmethod
 
 __all__ = ["Callable"]
 
-class Callable(Abstract_Class):
+class Callable(AbstractClass):
     @abstractmethod
     def arity(self) -> int: 
         pass    

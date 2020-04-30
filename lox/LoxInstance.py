@@ -1,5 +1,5 @@
 from .Token import *
-from .LoxExceptions import RunTimeError
+from .LoxExceptions import LoxRuntimeError
 
 __all__ = ["LoxInstance"]
 
@@ -19,7 +19,7 @@ class LoxInstance :
             #returns a method
             return method.bind(self)    
         
-        raise RunTimeError(name, f"Undefined property '{name.lexeme}'.")
+        raise LoxRuntimeError(name, "Undefined property '{}'.".format(name.lexeme))
     
     def set(self, name : Token, value : object) :
         #defines the state/value of an instance attribute
@@ -27,4 +27,4 @@ class LoxInstance :
     
     def __str__(self) :
         #runtime representation of Lox class instance objects
-        return "<" + self._klass._name + " instance>"
+        return "<{} instance>".format(self._klass._name)

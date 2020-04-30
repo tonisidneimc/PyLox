@@ -47,4 +47,4 @@ class LoxFunction(Callable) :
     
     def __str__(self) -> str:
         #runtime representation of Lox function objects
-        return f"<function {self.declaration.name.lexeme}>"
+        return "<function {}>".format(self.declaration.name.lexeme)

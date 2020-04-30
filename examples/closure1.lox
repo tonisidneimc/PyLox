@@ -9,9 +9,9 @@ var a = "global";
 
 {
     fun showA(){
-        print a;
+        print a; //it refers to the global variable 'a'
     }
-    showA();
+    showA(); // global
     var a = "block";
-    showA();
+    showA(); // global
 }

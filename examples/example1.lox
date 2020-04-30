@@ -1,7 +1,7 @@
-//comparison between iteration and recursion performance
-//calculates the nth term of the fibonacci sequence
+//comparison between the iteration and the recursion performance
+//when calculating the nth term of the fibonacci sequence
 
-//iteratively
+//iteratively, it's O(n)
 fun fibonacci_1(n){
     var fib1 = 1;
     var fib2 = 1;
@@ -26,7 +26,7 @@ fun fibonacci_1(n){
     return fib2;
 }
 
-//recursively
+//recursively, it's O(2^n)
 fun fibonacci_2(n){
     if(n == 2 or n == 1){
         return 1;
@@ -36,17 +36,19 @@ fun fibonacci_2(n){
     }
 }
 
-print "time spent calculating the nth term of fibonacci";
+print "Time spent calculating the nth term of fibonacci:";
 
+print "* iteratively:";
 var start = clock();
-fibonacci_1(8);
-var end = clock();
-print "iteratively:";
-print end - start;
+fibonacci_1(18);
+var iter = clock() - start;
+print iter;
 
+print "* recursively:";
 var start = clock();
-fibonacci_2(8);
-var end = clock();
-print "recursively:";
-print end - start;
+fibonacci_2(18);
+var recur = clock() - start;
+print recur;
 
+print "difference:";
+print recur - iter;

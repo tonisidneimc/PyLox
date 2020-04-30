@@ -1,5 +1,5 @@
 from .Token import *
-from .LoxExceptions import RunTimeError
+from .LoxExceptions import LoxRuntimeError
 
 __all__ = ["Environment"]
 
@@ -26,14 +26,14 @@ class Environment :
         if self.enclosing != None : 
             return self.enclosing.get(name)
             
-        raise RunTimeError(name, "Undefined variable '" + name.lexeme + "'.")
+        raise LoxRuntimeError(name, "Undefined name '{}'.".format(name.lexeme))
     
     def getAt(self, distance : int, name : str) :
         environment = self._ancestor(distance)
         return environment._values[name]
     
     def _ancestor(self, dist : int) :
-        #gets an outer scope at a 'dist' distance from the current scope
+        #get an external scope at a distance 'dist' from the current scope
         environment = self
         for i in range(dist) :
             environment = environment.enclosing
@@ -41,14 +41,13 @@ class Environment :
         return environment
     
     def assign(self, name : Token, value : object) -> None:
-        #assign a value to an existing variable,
-        #defined in the current or some enclosing scope 
+        #assigns to a variable if it is visible in the current scope
         
-        #assign to a local variable
+        #tries to find this variable in the local scope
         if name.lexeme in self._values :
             self._values[name.lexeme] = value; return
         
-        #assign to a variable defined in an outer block
+        #tries to find this variable in an outer scope
         try : 
             if self.enclosing != None : 
                 self.enclosing.assign(name, value); return
@@ -56,8 +55,8 @@ class Environment :
         except LoxExceptions : 
             raise
         
-        #variable undeclared, not allowed to create a new variable
-        raise RunTimeError(name, "Undefined variable '" + name.lexeme + "'.")
+        #undeclared variable, cannot create a new variable here
+        raise LoxRuntimeError(name, "Undefined variable '{}'.".format(name.lexeme))
    
     def assignAt(self, distance : int, name : Token, value : object) -> None:
         environment = self._ancestor(distance)

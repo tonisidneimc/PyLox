@@ -1,0 +1,58 @@
+//implements a single Binary Search Tree structure
+
+class Node{
+    init(data){
+        this.data = data;
+        this.left = nil;
+        this.right = nil;
+    }
+}
+
+class BinaryTree{
+    init(){
+        this.root = nil;        
+    }
+    insert(data){
+        this.root = this.insertHelper(this.root, data);
+    }
+    insertHelper(node, data){
+        if(node == nil){
+            node = Node(data);
+        }
+        else{
+            if(data > node.data){
+                node.right = this.insertHelper(node.right, data);
+            }
+            else if(data < node.data){
+                node.left = this.insertHelper(node.left, data);
+            }
+        }
+        return node;
+    }
+    inOrder(){
+        this.inOrderHelper(this.root);    
+    }
+    inOrderHelper(node){
+        if(node != nil){
+            this.inOrderHelper(node.left);
+            print node.data;
+            this.inOrderHelper(node.right);
+        }
+    }
+}
+
+var tree = BinaryTree();
+
+tree.insert(41);
+tree.insert(20);
+tree.insert(65);
+tree.insert(11);
+tree.insert(29);
+tree.insert(50);
+tree.insert(91);
+tree.insert(32);
+tree.insert(72);
+tree.insert(99);
+
+tree.inOrder();  // 11 20 29 32 41 50 65 72 91 99
+
