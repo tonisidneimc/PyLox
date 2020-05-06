@@ -15,6 +15,8 @@ classDeclaration -> "class" class
        printStmt -> "print" expression ";"
        whileStmt -> "while" "(" expression ")" statement
       returnStmt -> "return" expression? ";"
+       breakStmt -> "break" ";"
+    continueStmt -> "continue" ";"
            block -> "{" declaration* "}"
       expression -> assignment ("," assignment)*
       assignment -> ternary | (call ".")? IDENTIFIER "=" assignment

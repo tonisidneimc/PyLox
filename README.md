@@ -54,7 +54,7 @@ but operations with operands of different data types are not allowed.
 
 ### To Do
   - [ ] anonymous functions 
-  - [ ] break & continue statements
+  - [x] break & continue statements
   - [ ] exit statement
   - [ ] delete statement
   - [ ] getters

@@ -38,6 +38,9 @@ class Stack :
     def isEmpty(self) -> bool: 
         return len(self) == 0
 
+class StmtType :
+    NONE, LOOP = range(2)
+
 class FunctionType :
     NONE, \
     FUNCTION, \
@@ -55,6 +58,7 @@ class Resolver :
         self._hadError = False
         self._scopes = Stack()
         self._interpreter = interpreter
+        self._currentScope = StmtType.NONE
         self._currentFun = FunctionType.NONE
         self._currentCls = ClassType.NONE
         
@@ -156,10 +160,22 @@ class Resolver :
                 if what.value is not None : 
                     self.Resolve(what.value)
             return
-            
+        
+        elif isinstance(what, Stmt.Break) or isinstance(what, Stmt.Continue):
+            try :
+                if self._currentScope != StmtType.LOOP :
+                    raise LoxStaticError(what.keyword, "Cannot use outside loops.") 
+            except LoxStaticError as error :
+                self._hadError = True
+                error.what()
+            else : return
+        
         elif isinstance(what, Stmt.While) :
+            current = self._currentScope
+            self._currentScope = StmtType.LOOP
             self.Resolve(what.condition)
-            self.Resolve(what.body); return
+            self.Resolve(what.body)
+            self._currentScope = current; return
         
         elif isinstance(what, Stmt.Expression) :
             self.Resolve(what.expression); return

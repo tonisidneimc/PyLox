@@ -33,6 +33,16 @@ class Return(Stmt) :
         self.keyword = keyword
         self.value = value
 
+class Break(Stmt) : 
+    #break -> "break" ";"
+    def __init__(self, keyword : Token) :
+        self.keyword = keyword
+
+class Continue(Stmt) : 
+    #continue -> "continue" ";"
+    def __init__(self, keyword : Token) :
+        self.keyword = keyword
+
 class If(Stmt) :
     #if -> if(condition) thenBranch; else elseBranch;
     def __init__(self, condition : Expr, thenBranch : Stmt, elseBranch : Stmt) :

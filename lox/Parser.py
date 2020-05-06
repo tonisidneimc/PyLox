@@ -141,6 +141,8 @@ class Parser(object) :
                 statement -> printStmt
                 statement -> whileStmt
                 statement -> returnStmt
+                statement -> breakStmt
+                statement -> continueStmt
                 statement -> block
         """
         if self._matchAny(TokenType.IF) :
@@ -157,6 +159,12 @@ class Parser(object) :
             
         elif self._matchAny(TokenType.RETURN) :
             return self._returnStmt()    
+        
+        elif self._matchAny(TokenType.BREAK) :
+            return self._breakStmt()    
+        
+        elif self._matchAny(TokenType.CONTINUE) :
+            return self._continueStmt()    
         
         elif self._matchAny(TokenType.LEFT_BRACE) :
             return self._block()
@@ -272,6 +280,28 @@ class Parser(object) :
         self._consume(TokenType.SEMICOLON, errorMessage = "Expect ';' after return value.")
         
         return Stmt.Return(keyword, value)
+    
+    def _breakStmt(self) -> Stmt:
+        """
+            matches the rule:
+                breakStmt -> "break" ";"
+        """
+        keyword = self._previous()
+        
+        self._consume(TokenType.SEMICOLON, errorMessage = "Expect ';' after break.")
+        
+        return Stmt.Break(keyword)
+    
+    def _continueStmt(self) -> Stmt:
+        """
+            matches the rule:
+                continueStmt -> "continue" ";"
+        """
+        keyword = self._previous()
+        
+        self._consume(TokenType.SEMICOLON, errorMessage = "Expect ';' after continue.")
+        
+        return Stmt.Continue(keyword)
         
     def _block(self) -> Stmt:
         """

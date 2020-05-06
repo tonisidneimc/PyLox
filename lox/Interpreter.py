@@ -4,6 +4,8 @@ from .TokenType import *
 from .Token import *
 from .LoxExceptions import LoxRuntimeError
 from .LoxExceptions import ReturnException
+from .LoxExceptions import LoopControlException
+from .LoxExceptions import BreakException, ContinueException
 from . import Expr
 from . import Stmt
 from .Environment import *
@@ -95,7 +97,10 @@ class Interpreter :
         elif isinstance(statement, Stmt.While) :
             #execute the 'while' statement
             while self._isTruth(self._evaluate(statement.condition)) :
-                self._execute(statement.body)
+                try :
+                    self._execute(statement.body)
+                except LoopControlException as control:
+                    if isinstance(control, BreakException) : break  
             return
         
         elif isinstance(statement, Stmt.Return) :
@@ -103,6 +108,12 @@ class Interpreter :
             #nil is the default return value
             value = None if statement.value is None else self._evaluate(statement.value)
             raise ReturnException(value)
+        
+        elif isinstance(statement, Stmt.Break) :
+            raise BreakException()
+        
+        elif isinstance(statement, Stmt.Continue) :
+            raise ContinueException()
                         
         elif isinstance(statement, Stmt.Print) :
             #evaluates and print this expression

@@ -5,6 +5,10 @@ class ReturnException(Exception) :
     def __init__(self, value : object) :
         self._value = value
 
+class LoopControlException(Exception) : pass
+class BreakException(LoopControlException) : pass
+class ContinueException(LoopControlException) : pass
+
 class LoxException(Exception) :
 
     @staticmethod
