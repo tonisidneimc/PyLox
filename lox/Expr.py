@@ -50,6 +50,17 @@ class Binary   (Expr) :
     def __str__(self) :
         return str(self.left) + " " + self.operator.lexeme + " " + str(self.right)
 
+class Ternary (Expr) :
+    #ternary -> condition "?" thenBranch ":" elseBranch
+    def __init__(self, condition : Expr, operator : Token, thenValue : Expr, elseValue : Expr) :
+        self.condition = condition
+        self.operator = operator
+        self.thenValue = thenValue
+        self.elseValue = elseValue
+    
+    def __str__(self) :
+        return str(self.condition) + " ? " + str(self.thenValue) + " : " + str(self.elseValue)
+
 class Variable (Expr) :
     #variable -> var <name>; #var declaration
     #variable -> <name> referred in some expression
@@ -59,6 +70,16 @@ class Variable (Expr) :
     def __str__(self) :
         return self.name.lexeme
 
+class Chain (Expr) :
+    #chain -> left "," right
+    def __init__(self, left : Expr, operator : Token, right : Expr) :
+        self.left = left
+        self.operator = operator
+        self.right = right
+    
+    def __str__(self) :
+        return str(self.left) + "," + str(self.right)
+
 class Assign   (Expr) :
     #assign -> var <name> = value
     def __init__(self, name : Token, value : Expr) :
@@ -66,7 +87,7 @@ class Assign   (Expr) :
         self.value = value
     
     def __str__(self) :
-        return self.name.lexeme + " = " + str(self.value)
+        return self.name.lexeme + " = " + str(self.value)    
     
 class Call  (Expr) :
     #call -> callee(args)

@@ -19,10 +19,19 @@ __all__ = ["Interpreter"]
     producing user-visible output or modifying some state in the interpreter that can be detected later.
 """
 
+_toEcho = {
+    Expr.Call, Expr.Get,
+    Expr.Variable, Expr.Grouping,
+    Expr.Unary, Expr.Binary, 
+    Expr.Ternary, Expr.Logical, 
+    Expr.Literal
+}
+
 class Interpreter :
 
     def __init__(self, isPromptSession : bool = False) :
         self.isPromptSession = isPromptSession
+        
         self._hadError = False
         self.globals = Environment() #global scope
         self._environment = self.globals #the current scope is the global scope
@@ -62,15 +71,10 @@ class Interpreter :
         elif isinstance(statement, Stmt.Expression) :
             #evaluates this expression
             temp = self._evaluate(statement.expression)
-            if self.isPromptSession : 
-                toEcho = {
-                    Expr.Call,
-                    Expr.Variable,
-                    Expr.Unary, Expr.Binary, Expr.Grouping,
-                    Expr.Logical, Expr.Literal,
-                    Expr.Get
-                }
-                if type(statement.expression) in toEcho :
+            
+            if self.isPromptSession :
+             
+                if type(statement.expression) in _toEcho :
                     print(self._stringify(temp)); return #echoes to the prompt
                 
             else : return
@@ -194,6 +198,12 @@ class Interpreter :
             #returns the state or value of the variable
             return self._findVariable(expr.name, expr)
         
+        elif isinstance(expr, Expr.Chain) :
+            #evaluates the left operand and discards the result
+            #then evaluates the right operand and returns this value
+            self._evaluate(expr.left)
+            return self._evaluate(expr.right)
+        
         elif isinstance(expr, Expr.Assign) :
             #assign to a variable defined in the current scope
             value = self._evaluate(expr.value)
@@ -306,11 +316,18 @@ class Interpreter :
                 TokenType.BANG_EQUAL    : (lambda : not(self._isEqual(left, right))),
                 TokenType.MINUS         : (lambda : float(left) - float(right)),
                 TokenType.STAR          : (lambda : float(left) * float(right)),
-                TokenType.SLASH         : (lambda : self._division(expr.operator, left, right)),
+                TokenType.MOD           : (lambda : self._division(expr.operator, left, right, True)),
+                TokenType.SLASH         : (lambda : self._division(expr.operator, left, right, False)),
                 TokenType.PLUS          : (lambda : self._addOrConcatenate(expr.operator, left, right))
             }
             return _operations[expr.operator.tokenValue]()
-            
+        
+        elif isinstance(expr, Expr.Ternary) :
+            if self._isTruth(self._evaluate(expr.condition)) :    
+                return self._evaluate(expr.thenValue)
+            else :
+                return self._evaluate(expr.elseValue)    
+    
     
     def _checkNumberOperands(self, operator : Token, *operands : object) -> None:
         #check if all operands are of the same numeric type (float)
@@ -320,11 +337,14 @@ class Interpreter :
                 raise LoxRuntimeError(operator, "All operands must be numbers.")
         return
     
-    def _division(self, operator : Token, left : object, right : object) -> float:
+    def _division(self, operator : Token, left : object, right : object, isMod : bool) -> float:
         #implements the logic of the division operation, where the zeroed denominator is not allowed
         
         try :
-            quocient =  float(left) / float(right)
+            if(isMod) :
+                quocient =  float(left) % float(right)
+            else :
+                quocient =  float(left) / float(right)
         except ZeroDivisionError :
             raise LoxRuntimeError(operator, "Attempted to divide by zero.")
         else :
@@ -336,7 +356,7 @@ class Interpreter :
             #adds two numbers as <float> + <float>
             return float(left) + float(right)
         
-        elif isinstance(left, str) and isinstance(right, str) :
+        elif isinstance(left, str) or isinstance(right, str) :
             #concatenate left and right as <str> + <str>
             return str(left) + str(right)
         

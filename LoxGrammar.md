@@ -16,17 +16,18 @@ classDeclaration -> "class" class
        whileStmt -> "while" "(" expression ")" statement
       returnStmt -> "return" expression? ";"
            block -> "{" declaration* "}"
-      expression -> assignment
-      assignment -> logic_or | (call ".")? IDENTIFIER "=" assignment
+      expression -> assignment ("," assignment)*
+      assignment -> ternary | (call ".")? IDENTIFIER "=" assignment
+         ternary -> logic_or ("?" expression ":" expression)?
         logic_or -> logic_and ("or" logic_and)*
        logic_and -> equality ("and" equality)*
         equality -> comparison ("==" comparison | "!=" comparision)*
       comparison -> addition ("<" addition | "<=" addition | ">" addition | ">=" addition)*
         addition -> multiplication ("+" multiplication | "-" multiplication)*
-  multiplication -> unary ("*" unary | "/" unary)*
+  multiplication -> unary ("*" unary | "/" unary | "%" unary)*
            unary -> ("!" unary | "-" unary)* | call
             call -> primary ( "(" arguments? ")" | "." IDENTIFIER)*
-       arguments -> expression ("," expression)*
+       arguments -> assignment ("," assignment)*
          primary -> NUMBER | STRING | "false" | "true" | "nil" | IDENTIFIER | grouping | "super" "." IDENTIFIER   
         grouping -> "(" expression ")"
 ~~~

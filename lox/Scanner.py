@@ -77,7 +77,10 @@ class Scanner(object) :
             "-"  : (lambda : self._addToken(TokenType.MINUS)),
             "+"  : (lambda : self._addToken(TokenType.PLUS)),
             "*"  : (lambda : self._addToken(TokenType.STAR)),
+            "%"  : (lambda : self._addToken(TokenType.MOD)),
             "/"  : (lambda : self._addToken(TokenType.SLASH) if not self._matchAny("/", "*") else self._finishComment()),
+            "?"  : (lambda : self._addToken(TokenType.QUESTION_MARK)),
+            ":"  : (lambda : self._addToken(TokenType.COLON)),
             "!"  : (lambda : self._addToken(TokenType.BANG_EQUAL if self._matchAny("=") else TokenType.BANG)),
             "="  : (lambda : self._addToken(TokenType.EQUAL_EQUAL if self._matchAny("=") else TokenType.EQUAL)),
             "<"  : (lambda : self._addToken(TokenType.LESS_EQUAL if self._matchAny("=") else TokenType.LESS)),
@@ -95,15 +98,12 @@ class Scanner(object) :
         
         else : 
             raise LoxScanError(self._line, "Unexpected character '{}'".format(character))
-            raise LoxScanError(self._line, "Unexpected character '{}'".format(char))
             
-    
     def _addToken(self, token : TokenType, literal : object = None) -> None :
         #creates a token, with lexeme at _source from _start until _current - 1
 
         lexeme = self._source[self._start : self._current]
         self._tokens.append(Token(token, lexeme, literal, self._line))
-    
     
     def _string(self) -> None: 
         while self._peek() != '"' and not self._isAtEnd() :
@@ -219,9 +219,8 @@ class Scanner(object) :
             c = self._peek()
             
             if c not in {" ", "\n", "\r", "\t"} : 
-                break
-                
-            if c == "\n" : 
+                break 
+            elif c == "\n" : 
                 self._incrementLine() 
             
             self._advance()

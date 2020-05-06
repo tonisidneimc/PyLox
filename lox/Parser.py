@@ -290,17 +290,25 @@ class Parser(object) :
     def _expression(self) -> Expr:
         """
             matches the rule: 
-                expression -> assignment
+                expression -> assignment ("," assignment)*
         """
-        return self._assignment()
+        expr = self._assignment()
+        
+        while self._matchAny(TokenType.COMMA) :
+            operator = self._previous()
+            right = self._assignment()
+            
+            expr = Expr.Chain(expr, operator, right)
+        
+        return expr
     
     def _assignment(self) -> Expr:
         """
             matches to one of the rules:
-                assignment -> logic_or
+                assignment -> ternary
                 assignment -> (call ".")? IDENTIFIER "=" assignment
         """
-        expr = self._logic_or()
+        expr = self._ternary()
         
         if self._matchAny(TokenType.EQUAL) :
             equals = self._previous()
@@ -316,6 +324,24 @@ class Parser(object) :
                 LoxParseError(equals, "Invalid assignment target.").what()
                 self._hadError = True
                  
+        return expr
+    
+    def _ternary(self) -> Expr :
+        """
+            matches the rule: 
+                ternary -> logic_or ("?" expression ":" expression)?
+        """
+        expr = self._logic_or()
+        
+        if self._matchAny(TokenType.QUESTION_MARK) :
+            operator = self._previous()
+            ifTrueValue = self._expression()
+            
+            self._consume(TokenType.COLON, errorMessage = "Expect ':' in the ternary expression.")
+            ifFalseValue = self._expression()
+            
+            expr = Expr.Ternary(expr, operator, ifTrueValue, ifFalseValue)
+                    
         return expr
     
     def _logic_or(self) -> Expr:
@@ -403,10 +429,11 @@ class Parser(object) :
             matches to one of the rules: 
                 multiplication -> unary ("*" unary)*
                 multiplication -> unary ("/" unary)*
+                multiplication -> unary ("%" unary)*
         """
         expr = self._unary()
         
-        while self._matchAny(TokenType.STAR, TokenType.SLASH) :
+        while self._matchAny(TokenType.STAR, TokenType.SLASH, TokenType.MOD) :
             operator = self._previous()
             right = self._unary()
             
@@ -462,7 +489,7 @@ class Parser(object) :
                     LoxParseError(self._peek(), "Expect less than 255 arguments to the function.").what()
                     self._hadError = True
                     
-                arguments.append(self._expression())
+                arguments.append(self._assignment())
                     
                 if not self._matchAny(TokenType.COMMA) : break
         

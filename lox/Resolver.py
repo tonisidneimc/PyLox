@@ -178,6 +178,10 @@ class Resolver :
             else :
                 self._resolveLocal(what, what.name); return
         
+        elif isinstance(what, Expr.Chain) :
+            self.Resolve(what.left)
+            self.Resolve(what.right); return
+        
         elif isinstance(what, Expr.Assign) :
             self.Resolve(what.value)
             self._resolveLocal(what, what.name); return
@@ -237,6 +241,11 @@ class Resolver :
         elif isinstance(what, Expr.Binary) :
             self.Resolve(what.left)    
             self.Resolve(what.right); return
+        
+        elif isinstance(what, Expr.Ternary) :
+            self.Resolve(what.condition)
+            self.Resolve(what.thenValue)
+            self.Resolve(what.elseValue); return
         
         elif isinstance(what, Expr.Grouping) :
             self.Resolve(what.expression); return  

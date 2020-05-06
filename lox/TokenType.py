@@ -2,7 +2,8 @@ __all__ = ["TokenType"]
 
 class TokenType :
     LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE, \
-    COMMA, DOT, MINUS, PLUS, SEMICOLON, SLASH, STAR, \
+    COMMA, DOT, MINUS, PLUS, SEMICOLON, SLASH, MOD, STAR, \
+    QUESTION_MARK, COLON, \
     \
     BANG, BANG_EQUAL, EQUAL, EQUAL_EQUAL, \
     GREATER, GREATER_EQUAL, LESS, LESS_EQUAL, \
@@ -12,5 +13,5 @@ class TokenType :
     AND, CLASS, ELSE, FALSE, FUN, FOR, IF, NIL, OR, \
     PRINT, RETURN, SUPER, THIS, TRUE, VAR, WHILE, \
     \
-    EOF = range(39)
+    EOF = range(42)
 
