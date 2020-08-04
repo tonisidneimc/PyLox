@@ -2,17 +2,17 @@ import sys
 import time
 from .TokenType import *
 from .Token import *
-from .LoxExceptions import LoxRuntimeError
-from .LoxExceptions import ReturnException
-from .LoxExceptions import LoopControlException
-from .LoxExceptions import BreakException, ContinueException
+from .PyLoxExceptions import PyLoxRuntimeError
+from .PyLoxExceptions import ReturnException
+from .PyLoxExceptions import LoopControlException
+from .PyLoxExceptions import BreakException, ContinueException
 from . import Expr
 from . import Stmt
 from .Environment import *
 from .Callable import *
-from .LoxFunction import *
-from .LoxClass import *
-from .LoxInstance import *
+from .PyLoxFunction import *
+from .PyLoxClass import *
+from .PyLoxInstance import *
 
 __all__ = ["Interpreter"]
 
@@ -60,7 +60,7 @@ class Interpreter :
             for statement in statements :
                 self._execute(statement)
             
-        except LoxRuntimeError as error :
+        except PyLoxRuntimeError as error :
             self._hadError = True
             error.what()
     
@@ -83,7 +83,7 @@ class Interpreter :
             
         elif isinstance(statement, Stmt.Function) :
             #defines a function in the current scope
-            function = LoxFunction(statement, self._environment, False)
+            function = PyLoxFunction(statement, self._environment, False)
             self._environment.define(statement.name.lexeme, function); return
         
         elif isinstance(statement, Stmt.If) :
@@ -131,8 +131,8 @@ class Interpreter :
             #evaluates the superclass if it is defined
             if statement.supercls is not None :
                 supercls = self._evaluate(statement.supercls)
-                if not isinstance(supercls, LoxClass) : 
-                    raise LoxRuntimeError(statement.supercls.name, 
+                if not isinstance(supercls, PyLoxClass) : 
+                    raise PyLoxRuntimeError(statement.supercls.name, 
                                 "Superclass of '{}' must be a class.".format(statement.name.lexeme))
             else : supercls = None
             
@@ -146,9 +146,9 @@ class Interpreter :
             methods = {}
             for method in statement.methods :
                 methodName = method.name.lexeme
-                methods[methodName] = LoxFunction(method, self._environment, isInitializer = True if methodName == "init" 
+                methods[methodName] = PyLoxFunction(method, self._environment, isInitializer = True if methodName == "init" 
                                                                                                   else False)
-            klass = LoxClass(statement.name.lexeme, supercls, methods)
+            klass = PyLoxClass(statement.name.lexeme, supercls, methods)
             if supercls is not None : 
                 self._environment = self._environment.enclosing
                 
@@ -227,7 +227,7 @@ class Interpreter :
                 #assume that it is in the global scope
                 try :
                     self.globals.assign(expr.name, value)
-                except LoxRuntimeError as error :
+                except PyLoxRuntimeError as error :
                     #it is not in the global scope
                     #attempt to assign to an undefined variable
                     self._hadError = True
@@ -247,12 +247,12 @@ class Interpreter :
             args = [self._evaluate(arg) for arg in expr.args]
             
             if not isinstance(callee, Callable) : #check if it evaluates to a callable defined function
-                raise LoxRuntimeError(expr.paren, "Can only call functions and classes.")
+                raise PyLoxRuntimeError(expr.paren, "Can only call functions and classes.")
             
             function = callee
             
             if len(args) != function.arity() : 
-                raise LoxRuntimeError(expr.paren, "Expect {} arguments, but got {}.".format(function.arity(), len(args)))
+                raise PyLoxRuntimeError(expr.paren, "Expect {} arguments, but got {}.".format(function.arity(), len(args)))
             
             return function.call(self, args) #calls the function with their specific arguments
         
@@ -268,23 +268,23 @@ class Interpreter :
             
             method = superclass.findMethod(expr.method.lexeme)
             if method is None :
-                raise LoxRuntimeError(expr.method, "Undefined property '{}'.".format(expr.name.lexeme))
+                raise PyLoxRuntimeError(expr.method, "Undefined property '{}'.".format(expr.name.lexeme))
                 
             return method.bind(thisObject)
         
         elif isinstance(expr, Expr.Get) :
             obj = self._evaluate(expr.object)
             
-            if isinstance(obj, LoxInstance) :
+            if isinstance(obj, PyLoxInstance) :
                 return obj.get(expr.name)
             
-            else : raise LoxRuntimeError(expr.name, "Only instances have properties.")
+            else : raise PyLoxRuntimeError(expr.name, "Only instances have properties.")
         
         elif isinstance(expr, Expr.Set) :
             obj = self._evaluate(expr.object)
             
-            if not isinstance(obj, LoxInstance) :
-                raise LoxRuntimeError(expr.name, "Only instances have fields.")
+            if not isinstance(obj, PyLoxInstance) :
+                raise PyLoxRuntimeError(expr.name, "Only instances have fields.")
             
             value = self._evaluate(expr.value)
             obj.set(expr.name, value)
@@ -345,7 +345,7 @@ class Interpreter :
         
         for operand in operands :
             if not isinstance(operand, float) :
-                raise LoxRuntimeError(operator, "All operands must be numbers.")
+                raise PyLoxRuntimeError(operator, "All operands must be numbers.")
         return
     
     def _division(self, operator : Token, left : object, right : object, isMod : bool) -> float:
@@ -357,7 +357,7 @@ class Interpreter :
             else :
                 quocient =  float(left) / float(right)
         except ZeroDivisionError :
-            raise LoxRuntimeError(operator, "Attempted to divide by zero.")
+            raise PyLoxRuntimeError(operator, "Attempted to divide by zero.")
         else :
             return quocient        
             
@@ -372,10 +372,10 @@ class Interpreter :
             return str(left) + str(right)
         
         else :
-            raise LoxRuntimeError(operator, "Operands must be two numbers or two strings.")
+            raise PyLoxRuntimeError(operator, "Operands must be two numbers or two strings.")
     
     def _isTruth(self, obj : object) -> bool:
-          #matches the Lox truth rule, where false and nil are False and everything else is True
+          #matches the PyLox truth rule, where false and nil are False and everything else is True
 
           if obj == None : return False
           if isinstance(obj, bool) : return bool(obj)

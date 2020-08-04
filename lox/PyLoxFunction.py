@@ -1,12 +1,12 @@
 from . import Stmt
 from .Environment import Environment
 from .Callable import *
-from .LoxInstance import *
-from .LoxExceptions import ReturnException
+from .PyLoxInstance import *
+from .PyLoxExceptions import ReturnException
 
-__all__ = ["LoxFunction"]
+__all__ = ["PyLoxFunction"]
 
-class LoxFunction(Callable) : 
+class PyLoxFunction(Callable) : 
     def __init__(self, declaration : Stmt.Function, closure : Environment, isInitializer : bool):
         self.declaration = declaration
         self.closure = closure
@@ -34,17 +34,17 @@ class LoxFunction(Callable) :
             
             return None #"nil" is the default return value
     
-    def bind(self, instance : LoxInstance) :
+    def bind(self, instance : PyLoxInstance) :
         #bind is used in methods, to allow the "this" references to the instance in which it is bound, 
         #"this" is defined in a nested environment within the original method closure  
         environment = Environment(self.closure)
         environment.define("this", instance)
-        return LoxFunction(self.declaration, environment, self._isInitializer)
+        return PyLoxFunction(self.declaration, environment, self._isInitializer)
         
     def arity(self) -> int:
         #returns the expected length of the function's parameter list
         return len(self.declaration.params)
     
     def __str__(self) -> str:
-        #runtime representation of Lox function objects
+        #runtime representation of PyLox function objects
         return "<function {}>".format(self.declaration.name.lexeme)

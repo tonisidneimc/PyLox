@@ -2,7 +2,7 @@ from . import Expr
 from . import Stmt
 from .Token import *
 from .TokenType import *
-from .LoxExceptions import LoxParseError
+from .PyLoxExceptions import PyLoxParseError
 
 __all__ = ["Parser"]
 
@@ -61,7 +61,7 @@ class Parser(object) :
             
             return self._statement()
         
-        except LoxParseError as error:
+        except PyLoxParseError as error:
             error.what()
             self._hadError = True
             self._synchronize() #going into panic mode
@@ -104,7 +104,7 @@ class Parser(object) :
             while True:
                 #matches the rule: parameters -> IDENTIFIER ("," IDENTIFIER)*
                 if len(parametersList) >= 255:
-                    LoxParseError(self._peek(), "Functions with more than 255 parameters are not allowed.").what()
+                    PyLoxParseError(self._peek(), "Functions with more than 255 parameters are not allowed.").what()
                     self._hadError = True
                 
                 parameter = self._consume(TokenType.IDENTIFIER, errorMessage = "Expect parameter name.")
@@ -351,7 +351,7 @@ class Parser(object) :
                 return Expr.Set(expr.object, expr.name, value)
                     
             else : 
-                LoxParseError(equals, "Invalid assignment target.").what()
+                PyLoxParseError(equals, "Invalid assignment target.").what()
                 self._hadError = True
                  
         return expr
@@ -516,7 +516,7 @@ class Parser(object) :
             #parses the remaining arguments in this function call
                 #validates maximum number of arguments allowed
                 if len(arguments) >= 255 : #report it now, don't enter in panic mode
-                    LoxParseError(self._peek(), "Expect less than 255 arguments to the function.").what()
+                    PyLoxParseError(self._peek(), "Expect less than 255 arguments to the function.").what()
                     self._hadError = True
                     
                 arguments.append(self._assignment())
@@ -572,7 +572,7 @@ class Parser(object) :
             return Expr.Super(keyword, method)
                         
         else :
-            raise LoxParseError(self._peek(), "Expect expression.")    
+            raise PyLoxParseError(self._peek(), "Expect expression.")    
     
     def _matchAny(self, *args : TokenType) -> bool:
         #checks if there is any token in the args, that matches the _current token in _tokens
@@ -598,11 +598,11 @@ class Parser(object) :
         return self._previous()    
     
     def _consume(self, expected : TokenType, errorMessage : str) -> Token: 
-        #consumes _current token if it matches the expected token, else raise LoxParseError 
+        #consumes _current token if it matches the expected token, else raise PyLoxParseError 
         if self._check(expected):
             return self._advance()
         else :
-            raise LoxParseError(self._peek(), errorMessage)       
+            raise PyLoxParseError(self._peek(), errorMessage)       
         
     def _isAtEnd(self) -> bool :
         #checks if EOF is the _current Token in _tokens

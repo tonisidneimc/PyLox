@@ -1,4 +1,4 @@
-## Operator Precedence Table
+## PyLox Operator Precedence Table
 
 
 | Precedence | Operator |          Description         | Associativity |

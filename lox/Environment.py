@@ -1,5 +1,5 @@
 from .Token import *
-from .LoxExceptions import LoxRuntimeError
+from .PyLoxExceptions import PyLoxRuntimeError
 
 __all__ = ["Environment"]
 
@@ -26,7 +26,7 @@ class Environment :
         if self.enclosing != None : 
             return self.enclosing.get(name)
             
-        raise LoxRuntimeError(name, "Undefined name '{}'.".format(name.lexeme))
+        raise PyLoxRuntimeError(name, "Undefined name '{}'.".format(name.lexeme))
     
     def getAt(self, distance : int, name : str) :
         environment = self._ancestor(distance)
@@ -52,11 +52,11 @@ class Environment :
             if self.enclosing != None : 
                 self.enclosing.assign(name, value); return
         
-        except LoxExceptions : 
+        except PyLoxExceptions : 
             raise
         
         #undeclared variable, cannot create a new variable here
-        raise LoxRuntimeError(name, "Undefined variable '{}'.".format(name.lexeme))
+        raise PyLoxRuntimeError(name, "Undefined variable '{}'.".format(name.lexeme))
    
     def assignAt(self, distance : int, name : Token, value : object) -> None:
         environment = self._ancestor(distance)

@@ -1,18 +1,18 @@
 from .Token import *
 from .TokenType import *
-from .LoxExceptions import LoxScanError
+from .PyLoxExceptions import PyLoxScanError
 
 __all__ = ["Scanner"]
 
 """
     The Scanner performs the Lexical Analysis of a text. 
     The character buffer is read and divided into tokens, 
-    each corresponding to a symbol in the Lox language.
+    each corresponding to a symbol in the PyLox language.
 """
 
 class Scanner(object) :
     
-    #Lox reserved keywords
+    #PyLox reserved keywords
     _keywords = {
         "and"      : TokenType.AND,
         "class"    : TokenType.CLASS,
@@ -49,7 +49,7 @@ class Scanner(object) :
             while not self._isAtEnd() :
                 self._scanToken()
         
-        except LoxScanError as error :
+        except PyLoxScanError as error :
             self._hadError = True
             error.what()        
         else :
@@ -99,7 +99,7 @@ class Scanner(object) :
             return self._identifier()
         
         else : 
-            raise LoxScanError(self._line, "Unexpected character '{}'".format(character))
+            raise PyLoxScanError(self._line, "Unexpected character '{}'".format(character))
             
     def _addToken(self, token : TokenType, literal : object = None) -> None :
         #creates a token, with lexeme at _source from _start until _current - 1
@@ -113,7 +113,7 @@ class Scanner(object) :
             self._advance()
             
         if self._isAtEnd() :
-            raise LoxScanError(self._line, "Unterminated String.")
+            raise PyLoxScanError(self._line, "Unterminated String.")
         else :
             self._advance()
             value = self._source[self._start + 1 : self._current - 1]
@@ -211,7 +211,7 @@ class Scanner(object) :
                         self._incrementLine()
                     self._advance()
             else :
-                raise LoxScanError(self._line, "Unterminated Comment.")
+                raise PyLoxScanError(self._line, "Unterminated Comment.")
         
         else : return
             

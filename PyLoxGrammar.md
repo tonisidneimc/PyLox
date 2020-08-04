@@ -1,4 +1,4 @@
-## Lox Grammar
+## PyLox Grammar
 ~~~
          program -> declaration* EOF
      declaration -> classDeclaration | funDeclaration | varDeclaration | statement

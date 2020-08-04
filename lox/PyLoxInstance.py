@@ -1,9 +1,9 @@
 from .Token import *
-from .LoxExceptions import LoxRuntimeError
+from .PyLoxExceptions import PyLoxRuntimeError
 
-__all__ = ["LoxInstance"]
+__all__ = ["PyLoxInstance"]
 
-class LoxInstance :
+class PyLoxInstance :
     def __init__(self, klass) :
         self._klass = klass #class declaration
         self._fields = {} #define attributes here
@@ -19,12 +19,12 @@ class LoxInstance :
             #returns a method
             return method.bind(self)    
         
-        raise LoxRuntimeError(name, "Undefined property '{}'.".format(name.lexeme))
+        raise PyLoxRuntimeError(name, "Undefined property '{}'.".format(name.lexeme))
     
     def set(self, name : Token, value : object) :
         #defines the state/value of an instance attribute
         self._fields[name.lexeme] = value; return
     
     def __str__(self) :
-        #runtime representation of Lox class instance objects
+        #runtime representation of PyLox class instance objects
         return "<{} instance>".format(self._klass._name)

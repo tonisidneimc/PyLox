@@ -1,44 +1,47 @@
 ## PyLox
-A Python implementation, for study purposes, of an interpreter for the *__Lox__* scripting language, 
-based on the *__[Crafting Interpreters](https://craftinginterpreters.com)__* book. 
+A Tree-Walk Interpreter to the PyLox language, using the good old python for the simplest and cleanest implementation.
 
 ### Prerequisites
-To run this Lox interpreter, it is necessary to have a version of python **_3.5.x_** or higher,
-installed and properly configured on your virtual machine. 
-You can check your installed **_Python3_** version's number, by simply typing at the command prompt:
+To run this PyLox interpreter, you will need to have a version of python higher or equal to **_3.5_** on your system. 
+You can check your installed **_python3_** version, by typing at the command prompt:
 ```
-$ python3 --version
+$ make check
 ```
-If any error or a lower version, please consult the [Python documentation](https://docs.python.org/3/using/index.html) 
+If any error, or a lower version, please consult the [Python documentation](https://docs.python.org/3/using/index.html) 
 to proceed to the Python setup guide. 
 
 ### Running Tests
 
-To run your Lox script in an interative prompt mode, type:
+To run any PyLox script in an interative prompt mode, type:
 ```
-$ python3 PyLox.py
+$ make repl
 > ...
 ```
-Or to interpret a script located in a *__.lox__* extension file, provide the full path to the file: 
+Or to interpret a script located at a *__.plox__* file, provide the full path to the file: 
 ```
-$ python3 PyLox.py <file path>
+$ make run <file path>
 ```
-You can try to run your own lox scripts, or any of the scripts located in the "_examples_" folder for this project.
+You can try to run your own PyLox scripts, or any of the scripts located at the "_tests_" folder in this project.
 
-**e.g.**, to run the *__example1.lox__* file, type:
+**e.g.**, to run a single test script, type:
 ```
-$ python3 PyLox.py examples/example1.lox
+$ make test
+```
+Or to consult this guide at any time, type:
+
+```
+$ make help
 ```
 
 ### The Language
 
-The Lox language, originally designed by [Bob Nystrom](https://github.com/munificent), 
-is a **high-level dynamically-typed language**, that supports OOP, and have a C-like syntax.
+PyLox was born from the Lox language, originally designed by [Bob Nystrom](https://github.com/munificent) at the *__[Crafting Interpreters](https://craftinginterpreters.com)__* book. 
 
-The dynamic type feature allows variables to store values of any type at runtime, 
-but operations with operands of different data types are not allowed. 
+It is a **high-level dynamically-typed language**, that supports Object-Oriented Programming and have a C-like syntax.
+This dynamic type feature allows variables to store values of any type at runtime, 
+but operations with operands of different data types are not allowed.
 
-#### Lox supports : 
+#### PyLox supports : 
     
     * 4 built-in data-types : Numbers, Booleans, Strings and nil,
     * Expressions,
@@ -50,7 +53,7 @@ but operations with operands of different data types are not allowed.
     * Single Inheritance 
     
    
-   ***please consult the Lox Grammar file for more details**
+   ***please consult the PyLox Grammar file for more details**
 
 ### To Do
   - [ ] anonymous functions 

@@ -9,7 +9,7 @@ class LoopControlException(Exception) : pass
 class BreakException(LoopControlException) : pass
 class ContinueException(LoopControlException) : pass
 
-class LoxException(Exception) :
+class PyLoxException(Exception) :
 
     @staticmethod
     def report(line : int, where : str, message : str) -> None :
@@ -17,7 +17,7 @@ class LoxException(Exception) :
     
     def what(self) : pass
 
-class LoxScanError(LoxException) :
+class PyLoxScanError(PyLoxException) :
     def __init__(self, line : int, message : str) :
         self._line = line
         self._message = message
@@ -25,7 +25,7 @@ class LoxScanError(LoxException) :
     def what(self) -> None:
         return self.report(self._line, "", self._message)
 
-class LoxParseError(LoxException) :
+class PyLoxParseError(PyLoxException) :
     def __init__(self, token : Token, message : str) :
         self._token = token
         self._message = message
@@ -36,7 +36,7 @@ class LoxParseError(LoxException) :
         else :
             self.report(self._token.line, "at '{}'".format(self._token.lexeme), self._message)
 
-class LoxStaticError(LoxException) :
+class PyLoxStaticError(PyLoxException) :
     def __init__(self, token : Token, message : str) :
         self._token = token
         self._message = message
@@ -44,7 +44,7 @@ class LoxStaticError(LoxException) :
     def what(self) :
         return self.report(self._token.line, "at '{}'".format(self._token.lexeme), self._message)
 
-class LoxRuntimeError(LoxException) :
+class PyLoxRuntimeError(PyLoxException) :
     def __init__(self, token : Token, message : str) :
         self._token = token
         self._message = message

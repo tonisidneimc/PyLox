@@ -1,4 +1,5 @@
 /*
+  closures test
   The implementation of Closures allows accessing a value of a variable 
   by taking a 'snapshot' of the current state, 
   when that variable was referred to.
@@ -13,12 +14,12 @@ fun f(){
         print i;
     }
     //returns the function
+	//counter works as a generator
     return counter;
 }
 
 var count = f();
 
 for(var i = 0; i < 10; i = i + 1){
-    //it's like yield in python
-    count();
+    count(); //it's like yield in python
 }

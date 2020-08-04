@@ -1,4 +1,5 @@
 /*
+  testing Semantic Analysis in PyLox
   The resolver step allows a correspondence between the result obtained 
   when interpreting a given statement, where a variable appears, 
   and the result of performing a semantic analysis on the same statement. 

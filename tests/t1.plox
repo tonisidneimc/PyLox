@@ -36,19 +36,27 @@ fun fibonacci_2(n){
     }
 }
 
-print "Time spent calculating the nth term of fibonacci:";
+print "";
+print "This script analyses time complexity into PyLox.";
+print "";
+//comparison using the computation of the nth term of the fibonacci sequence
+print "- Calculating the nth term of fibonacci sequence:";
+print "    for n = 18:";
+print "";
 
-print "* iteratively:";
+print "    * iteratively O(n):";
 var start = clock();
-fibonacci_1(18);
+print "        fib(18) = " + fibonacci_1(18);
 var iter = clock() - start;
-print iter;
+print "        in " + iter * 1000 + " miliseconds";
+print "";
 
-print "* recursively:";
+print "    * recursively O(2^n):";
 var start = clock();
-fibonacci_2(18);
+print "        fib(18) = " + fibonacci_2(18);
 var recur = clock() - start;
-print recur;
+print "        in " + (recur * 1000) + " miliseconds";
+print "";
 
-print "difference:";
-print recur - iter;
+print "* difference: " + ((recur - iter) * 1000) + " miliseconds";
+print "";

@@ -1,7 +1,7 @@
 from . import Stmt
 from . import Expr
 from .Token import *
-from .LoxExceptions import LoxStaticError
+from .PyLoxExceptions import PyLoxStaticError
 
 __all__ = ["Resolver"]
 
@@ -108,8 +108,8 @@ class Resolver :
             
             try :
                 if what.supercls and what.name.lexeme == what.supercls.name.lexeme :
-                    raise LoxStaticError(what.name, "A class cannot inherit from itself.")
-            except LoxStaticError as error :
+                    raise PyLoxStaticError(what.name, "A class cannot inherit from itself.")
+            except PyLoxStaticError as error :
                 error.what()     
             
             if what.supercls is not None :
@@ -148,12 +148,12 @@ class Resolver :
             try :
                 if self._currentFun == FunctionType.NONE :
                     #attempt to return from top-level code
-                    raise LoxStaticError(what.keyword, "Cannot return from top-level code.")
+                    raise PyLoxStaticError(what.keyword, "Cannot return from top-level code.")
                 if self._currentFun == FunctionType.INITIALIZER :
                     #attempt to return from an init method
-                    raise LoxStaticError(what.keyword, "Cannot return a value from an initializer.")
+                    raise PyLoxStaticError(what.keyword, "Cannot return a value from an initializer.")
                     
-            except LoxStaticError as error :
+            except PyLoxStaticError as error :
                 self._hadError = True
                 error.what()
             else :
@@ -164,8 +164,8 @@ class Resolver :
         elif isinstance(what, Stmt.Break) or isinstance(what, Stmt.Continue):
             try :
                 if self._currentScope != StmtType.LOOP :
-                    raise LoxStaticError(what.keyword, "Cannot use outside loops.") 
-            except LoxStaticError as error :
+                    raise PyLoxStaticError(what.keyword, "Cannot use outside loops.") 
+            except PyLoxStaticError as error :
                 self._hadError = True
                 error.what()
             else : return
@@ -186,9 +186,9 @@ class Resolver :
                     if what.name.lexeme in self._scopes.top() and self._scopes.top()[what.name.lexeme] is False :
                         #this variable is declared but not defined yet; 
                         #it means that the user is trying to assign a local variable to itself     
-                        raise LoxStaticError(what.name, "Cannot read local variable in its own initializer.");
+                        raise PyLoxStaticError(what.name, "Cannot read local variable in its own initializer.");
             
-            except LoxStaticError as error:
+            except PyLoxStaticError as error:
                 self._hadError = True
                 error.what()
             else :
@@ -212,9 +212,9 @@ class Resolver :
         elif isinstance(what, Expr.This) :
             try:
                 if self._currentCls == ClassType.NONE :
-                    raise LoxStaticError(what.keyword, "Cannot use 'this' outside of a class.")
+                    raise PyLoxStaticError(what.keyword, "Cannot use 'this' outside of a class.")
             
-            except LoxStaticError as error:
+            except PyLoxStaticError as error:
                 self._hadError = True
                 error.what()
             else :
@@ -223,11 +223,11 @@ class Resolver :
         elif isinstance(what, Expr.Super) :
             try :
                 if self._currentCls == ClassType.NONE :
-                    raise LoxStaticError(what.keyword, "Cannot use 'super' outside of a class.")
+                    raise PyLoxStaticError(what.keyword, "Cannot use 'super' outside of a class.")
                 elif self._currentCls != ClassType.SUBCLASS :
-                    raise LoxStaticError(what.keyword, "Cannot use 'super' in a class with no superclass.")
+                    raise PyLoxStaticError(what.keyword, "Cannot use 'super' in a class with no superclass.")
                         
-            except LoxStaticError as error :
+            except PyLoxStaticError as error :
                 self._hadError = True
                 error.what()
             else :
@@ -270,9 +270,9 @@ class Resolver :
         if self._scopes.isEmpty() : return
         try :
             if name.lexeme in self._scopes.top() :
-                raise LoxStaticError(name, "Another variable with this name is already declared in this scope.")
+                raise PyLoxStaticError(name, "Another variable with this name is already declared in this scope.")
         
-        except LoxStaticError as error :
+        except PyLoxStaticError as error :
             self._hadError = True
             error.what()
         else :
